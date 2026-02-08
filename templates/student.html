@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 text-center">
+        <div class="card border-0 shadow-lg bg-dark-subtle animate-pulse">
+            <div class="card-body p-5">
+                <div class="mb-4">
+                    <div class="icon-square bg-success text-white rounded-circle p-4 d-inline-block shadow-lg"
+                        style="width: 100px; height: 100px; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-check fa-3x"></i>
+                    </div>
+                </div>
+
+                <h2 class="fw-bold mb-2">Attendance Confirmed!</h2>
+                <p class="text-muted mb-4">You are marking attendance for:</p>
+
+                <h1 class="display-4 fw-bold text-gradient mb-4">{{ subject }}</h1>
+
+                <form method="post">
+                    <input type="hidden" name="token" value="{{ token }}">
+                    <button type="submit" class="btn btn-primary btn-lg px-5 py-3 rounded-pill shadow-lg hover-lift">
+                        <i class="fas fa-check-circle me-2"></i>Confirm & Submit
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

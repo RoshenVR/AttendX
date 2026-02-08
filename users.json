@@ -1,0 +1,17 @@
+{
+    "admin": {
+        "password": "admin",
+        "role": "teacher",
+        "name": "Administrator"
+    },
+    "55": {
+        "password": "Dash",
+        "role": "student",
+        "name": "Hyper"
+    },
+    "22": {
+        "password": "roz",
+        "role": "student",
+        "name": "Hyper"
+    }
+}
