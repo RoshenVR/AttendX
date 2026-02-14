@@ -67,6 +67,54 @@
     </div>
 </div>
 
+<!-- Pending Approvals -->
+{% if pending_students %}
+<div class="row mb-5">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-warning bg-opacity-10 border-0 py-3">
+                <h5 class="fw-bold mb-0 text-warning-emphasis">
+                    <i class="fas fa-user-clock me-2"></i>Pending Student Approvals
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-4">Name</th>
+                                <th>Student ID</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for student in pending_students %}
+                            <tr>
+                                <td class="ps-4 fw-bold">{{ student.name }}</td>
+                                <td>{{ student.sid }}</td>
+                                <td>
+                                    <div class="d-flex gap-2">
+                                        <a href="{{ url_for('approve_user', sid=student.sid) }}"
+                                            class="btn btn-sm btn-success">
+                                            <i class="fas fa-check me-1"></i>Approve
+                                        </a>
+                                        <a href="{{ url_for('reject_user', sid=student.sid) }}"
+                                            class="btn btn-sm btn-danger">
+                                            <i class="fas fa-times me-1"></i>Reject
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <!-- Quick Actions -->
 <div class="row g-4">
     <div class="col-md-6">

@@ -117,7 +117,17 @@ def login():
                 if user['role'] != role:
                     flash(f"Invalid role. This account is not a {role}.", "error")
                     return redirect(url_for('login'))
-                    
+                
+                # Check Status for Students
+                if role == 'student':
+                    status = user.get('status', 'approved') # Default to approved to prevent lockout if column missing
+                    if status == 'pending':
+                        flash("Your account is awaiting approval.", "warning")
+                        return redirect(url_for('login'))
+                    elif status == 'rejected':
+                        flash("Your registration was rejected. Contact admin.", "error")
+                        return redirect(url_for('login'))
+
                 session['user'] = user['sid']
                 session['role'] = user['role']
                 session['name'] = user['name']
@@ -160,9 +170,10 @@ def register():
                 "sid": sid, 
                 "name": name, 
                 "password": password, 
-                "role": "student"
+                "role": "student",
+                "status": "pending"
             }).execute()
-            flash("Registration successful! Please login.", "success")
+            flash("Registration successful! Please wait for account approval.", "success")
             return redirect(url_for('login'))
         except Exception as e:
             # Check for duplicate key error (23505 is PG error code for unique violation, 
@@ -193,15 +204,21 @@ def admin_dashboard():
         total_students = supabase.table("users").select("*", count="exact", head=True).eq("role", "student").execute().count
         total_sessions = supabase.table("attendance_sessions").select("*", count="exact", head=True).execute().count
         active_sessions = supabase.table("attendance_sessions").select("*", count="exact", head=True).eq("active", True).execute().count
+        
+        # Pending Approvals
+        pending_students = supabase.table("users").select("*").eq("role", "student").eq("status", "pending").execute().data
+
     except Exception as e:
         print(f"Stats Error: {e}")
         total_teachers = total_students = total_sessions = active_sessions = 0
+        pending_students = []
     
     return render_template("admin_dashboard.html", 
                            total_teachers=total_teachers, 
                            total_students=total_students,
                            total_sessions=total_sessions,
-                           active_sessions=active_sessions)
+                           active_sessions=active_sessions,
+                           pending_students=pending_students)
 
 @app.route("/admin/add_teacher", methods=["POST"])
 def add_teacher():
@@ -226,6 +243,37 @@ def add_teacher():
         flash("User ID already exists.", "error")
         
     return redirect(url_for('admin_dashboard'))
+
+@app.route("/user/approve/<sid>")
+def approve_user(sid):
+    if not login_required('admin') and not login_required('teacher'):
+        return redirect(url_for('login'))
+    
+    if not supabase: return "DB Error", 500
+    
+    try:
+        supabase.table("users").update({"status": "approved"}).eq("sid", sid).execute()
+        flash(f"User {sid} approved successfully.", "success")
+    except Exception as e:
+        flash(f"Error approving user: {e}", "error")
+        
+    # Redirect back to referring page or dashboard
+    return redirect(request.referrer or url_for('admin_dashboard'))
+
+@app.route("/user/reject/<sid>")
+def reject_user(sid):
+    if not login_required('admin') and not login_required('teacher'):
+        return redirect(url_for('login'))
+    
+    if not supabase: return "DB Error", 500
+    
+    try:
+        supabase.table("users").update({"status": "rejected"}).eq("sid", sid).execute()
+        flash(f"User {sid} rejected.", "warning")
+    except Exception as e:
+        flash(f"Error rejecting user: {e}", "error")
+        
+    return redirect(request.referrer or url_for('admin_dashboard'))
 
 @app.route("/admin/users")
 def admin_users():
@@ -398,13 +446,18 @@ def teacher_dashboard():
             count = supabase.table("attendance_records").select("*", count="exact", head=True).eq("session_id", active_session['session_id']).execute().count
 
         subjects = supabase.table("subjects").select("*").order("subject_name").execute().data
+        
+        # Pending Approvals (Teachers can also approve)
+        pending_students = supabase.table("users").select("*").eq("role", "student").eq("status", "pending").execute().data
+        
     except Exception as e:
         print(f"Teacher Dashboard Error: {e}")
         active_session = None
         count = 0
         subjects = []
+        pending_students = []
 
-    return render_template("teacher_dashboard.html", active_session=active_session, attendance_count=count, subjects=subjects)
+    return render_template("teacher_dashboard.html", active_session=active_session, attendance_count=count, subjects=subjects, pending_students=pending_students)
 
 # ---------------- TEACHER ATTENDANCE ACTIONS ----------------
 @app.route("/teacher", methods=["GET", "POST"])
