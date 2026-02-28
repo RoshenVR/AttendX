@@ -574,8 +574,12 @@ def teacher():
                             }).execute()
 
                 supabase.table("attendance_sessions").update({"active": False}).eq("active", True).execute()
-                supabase.table("valid_tokens").delete().neq("token", "dummy").execute() 
-                supabase.table("valid_tokens").delete().gt("expires_at", "2000-01-01").execute() 
+                # 3. Cleanup valid_tokens (Safe wrap to prevent crash on permission error)
+                try:
+                    supabase.table("valid_tokens").delete().neq("token", "dummy").execute() 
+                    supabase.table("valid_tokens").delete().gt("expires_at", "2000-01-01").execute() 
+                except Exception as te:
+                    print(f"Token Cleanup Permission Error: {te}")
                 
                 flash("Attendance stopped and missing students marked absent.", "success")
                 return redirect(url_for('teacher_dashboard'))
@@ -594,45 +598,47 @@ def teacher():
         if active_session:
             cleanup_tokens()
             
-            # Check latest token
-            # Supabase doesn't support 'limit' with order easily in the same way? yes it does .order().limit()
-            tk_resp = supabase.table("valid_tokens").select("created_at").order("created_at", desc=True).limit(1).execute()
-            row = tk_resp.data[0] if tk_resp.data else None
-            
-            generate_new = False
-            if not row:
-                generate_new = True
-            else:
-                try:
-                    # Parse timestamp (Supabase is ISO 8601)
-                    last_created = datetime.fromisoformat(row['created_at'].replace('Z', '+00:00')) 
-                    # Note: Naive vs Aware datetime issues might occur.
-                    # datetime.now() is naive local. Supabase is UTC aware.
-                    # Simple fix: compare timestamps or force utc.
-                    # Let's use time.time() for elapsed
-                    # Or just rely on string if newly inserted?
-                    # Let's try to be robust. 
-                    # .timestamp() gives float.
-                    if (datetime.now(last_created.tzinfo) - last_created).total_seconds() > QR_REFRESH_TIME:
-                        generate_new = True
-                except Exception as e:
-                    print(f"Date parse error: {e}")
-                    generate_new = True
-
-            if generate_new:
-                token = generate_token()
-                now_iso = datetime.now().isoformat()
-                expires_iso = datetime.fromtimestamp(time.time() + TOKEN_VALID_TIME).isoformat()
+            # 2. Update QR Token logic (Safe wrap to prevent crash on permission error)
+            try:
+                # Check latest token
+                tk_resp = supabase.table("valid_tokens").select("created_at").order("created_at", desc=True).limit(1).execute()
+                row = tk_resp.data[0] if tk_resp.data else None
                 
-                supabase.table("valid_tokens").insert({
-                    "token": token,
-                    "created_at": now_iso,
-                    "expires_at": expires_iso
-                }).execute()
-                generate_qr(token)
+                generate_new = False
+                if not row:
+                    generate_new = True
+                else:
+                    try:
+                        # Parse timestamp (Supabase is ISO 8601)
+                        last_created = datetime.fromisoformat(row['created_at'].replace('Z', '+00:00')) 
+                        if (datetime.now(last_created.tzinfo) - last_created).total_seconds() > QR_REFRESH_TIME:
+                            generate_new = True
+                    except Exception as e:
+                        print(f"Date parse error: {e}")
+                        generate_new = True
+
+                if generate_new:
+                    token = generate_token()
+                    now_iso = datetime.now().isoformat()
+                    expires_iso = datetime.fromtimestamp(time.time() + TOKEN_VALID_TIME).isoformat()
+                    
+                    supabase.table("valid_tokens").insert({
+                        "token": token,
+                        "created_at": now_iso,
+                        "expires_at": expires_iso
+                    }).execute()
+                    generate_qr(token)
+            except Exception as te:
+                print(f"Token Refresh Permission Error: {te}")
+                # We still try to generate a fallback QR if no token exists, 
+                # but it might fail validation later if not in DB.
+                # For now, just logging it so the page doesn't crash.
+                flash("Warning: Token permission error. Attendance might not be markable.", "warning")
     except Exception as e:
         print(f"Teacher Page Error: {e}")
-        active_session = None
+        # Note: Do not reset active_session to None here if it was already fetched on line 590
+        # unless line 590 itself failed. 
+        if not active_session: active_session = None
         subjects = []
         
     # Extra data for manual tracking if session is active
@@ -973,10 +979,15 @@ def student():
                 flash("You have already marked attendance for this session.", "error")
                 return redirect(url_for('student_dashboard'))
             
-            # Validate token
-            token_valid = supabase.table("valid_tokens").select("*").eq("token", token_submitted).execute()
+            # Validate token (Safe wrap)
+            token_valid = None
+            try:
+                token_resp = supabase.table("valid_tokens").select("*").eq("token", token_submitted).execute()
+                token_valid = token_resp.data if token_resp.data else None
+            except Exception as te:
+                print(f"Token Validation Permission Error: {te}")
             
-            if token_valid.data:
+            if token_valid:
                 supabase.table("attendance_records").insert({
                     "session_id": active_session['session_id'],
                     "sid": sid,
@@ -995,11 +1006,17 @@ def student():
 
         # GET - Confirmation
         if token:
-            token_valid = supabase.table("valid_tokens").select("*").eq("token", token).execute()
-            if token_valid.data:
+            token_valid = None
+            try:
+                token_resp = supabase.table("valid_tokens").select("*").eq("token", token).execute()
+                token_valid = token_resp.data if token_resp.data else None
+            except Exception as te:
+                print(f"Token Confirmation Permission Error: {te}")
+
+            if token_valid:
                 return render_template("student.html", active=True, token=token, subject=active_session['subject'])
             else:
-                flash("QR code expired. Please scan again.", "error")
+                flash("QR code expired or server permission error. Please scan again.", "error")
                 return redirect(url_for('student_dashboard'))
     except Exception as e:
         print(f"Student Error: {e}")
