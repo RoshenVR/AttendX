@@ -558,34 +558,35 @@ def teacher():
                         sec = sub.get('section')
                         
                         # Find all enrolled students for this subject
-                        # We use dynamic filtering to handle cases where dept/sem/sec might be empty
+                        print(f"DEBUG: Looking for students with Dept: '{dept}', Sem: '{sem}', Sec: '{sec}'")
+                        
                         query = supabase.table("users").select("sid, name").eq("role", "student")
-                        if dept: query = query.eq("department", dept)
-                        if sem: query = query.eq("semester", sem)
-                        if sec: query = query.eq("section", sec)
+                        if dept: query = query.ilike("department", f"{dept.strip()}")
+                        if sem: query = query.ilike("semester", f"{sem.strip()}")
+                        if sec: query = query.ilike("section", f"{sec.strip()}")
                         
                         enrolled_resp = query.execute()
                         enrolled = enrolled_resp.data if enrolled_resp.data else []
                         
                         # Find students already marked (present or otherwise)
                         marked_resp = supabase.table("attendance_records").select("sid").eq("session_id", sess_id).execute()
-                        marked_sids = [str(m['sid']) for m in marked_resp.data] if marked_resp.data else []
+                        marked_sids = [str(m['sid']).strip() for m in marked_resp.data] if marked_resp.data else []
                         
                         # Identify absentees (those in enrolled but NOT in marked_sids)
-                        absentees = [s for s in enrolled if str(s['sid']) not in marked_sids]
+                        # We use strip and lower for a robust comparison
+                        absentees = [s for s in enrolled if str(s['sid']).strip() not in marked_sids]
                         
-                        print(f"DEBUG: Enrolled: {len(enrolled)}, Marked: {len(marked_sids)}, Absentees: {len(absentees)}")
+                        print(f"DEBUG: Found {len(enrolled)} enrolled, {len(marked_sids)} marked, resulting in {len(absentees)} absentees.")
                         
                         # Insert absentee records
                         for student in absentees:
-                            # Use the session_date if available
                             rec_date = active_session.get('session_date')
                             if not rec_date: rec_date = datetime.now().strftime("%d-%m-%Y")
                             
                             try:
                                 supabase.table("attendance_records").insert({
                                     "session_id": sess_id,
-                                    "sid": student['sid'],
+                                    "sid": str(student['sid']).strip(),
                                     "name": student['name'],
                                     "subject_id": sub_id,
                                     "subject": active_session['subject'],
@@ -674,26 +675,35 @@ def teacher():
     if active_session:
         try:
             sub_id = active_session['subject_id']
-            # Get sub details mapping to department, semester, section
-            sub_details = next((s for s in subjects if s['subject_id'] == sub_id), None)
+            # Robust mapping for subject details
+            sub_details = next((s for s in subjects if str(s['subject_id']) == str(sub_id)), None)
             
             if sub_details:
-                # Fetch eligible students
-                enrolled_students = supabase.table("users").select("sid, name").eq("role", "student")\
-                    .eq("department", sub_details.get("department"))\
-                    .eq("semester", sub_details.get("semester"))\
-                    .eq("section", sub_details.get("section")).execute().data
+                dept = sub_details.get("department")
+                sem = sub_details.get("semester")
+                sec = sub_details.get("section")
+                
+                # Fetch eligible students with robust filtering
+                query = supabase.table("users").select("sid, name").eq("role", "student")
+                if dept: query = query.ilike("department", f"{dept.strip()}")
+                if sem: query = query.ilike("semester", f"{sem.strip()}")
+                if sec: query = query.ilike("section", f"{sec.strip()}")
+                
+                enrolled_resp = query.execute()
+                enrolled_students = enrolled_resp.data if enrolled_resp.data else []
                     
-            # Fetch existing records
-            records = supabase.table("attendance_records").select("sid, status, marked_type").eq("session_id", active_session['session_id']).execute().data
+            # Fetch existing records and ensure SID comparison is string-safe
+            records_resp = supabase.table("attendance_records").select("sid, status, marked_type").eq("session_id", active_session['session_id']).execute()
+            records = records_resp.data if records_resp.data else []
             
             for r in records:
+                sid_str = str(r['sid']).strip()
                 if r.get('status', 'present') == 'present':
-                    present_sids.append(r['sid'])
+                    present_sids.append(sid_str)
                     if r.get('marked_type') == 'manual':
-                        manual_present_sids.append(r['sid'])
+                        manual_present_sids.append(sid_str)
                 elif r.get('status') == 'absent':
-                    absent_sids.append(r['sid'])
+                    absent_sids.append(sid_str)
                     
         except Exception as e:
             print(f"Error fetching manual tracking data: {e}")
