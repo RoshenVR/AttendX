@@ -52,21 +52,31 @@
                     <p class="text-muted mb-4">Start a new class to begin taking attendance.</p>
 
                     <form action="{{ url_for('teacher') }}" method="POST"
-                        class="row justify-content-center g-2 align-items-center">
+                        class="row justify-content-center g-3 align-items-center">
                         <input type="hidden" name="action" value="start">
-                        <div class="col-auto">
-                            <select name="subject_id"
-                                class="form-select form-select-lg bg-dark text-light border-secondary" required
-                                style="min-width: 300px; cursor: pointer;">
+                        <div class="col-md-5">
+                            <select name="subject_id" class="form-select bg-dark text-light border-secondary" required
+                                style="cursor: pointer;">
                                 <option value="" selected disabled>Select Subject to Start</option>
                                 {% for subject in subjects %}
                                 <option value="{{ subject.subject_id }}">{{ subject.subject_name }} ({{
-                                    subject.class_name }})</option>
+                                    subject.class_name }} - {{ subject.department }} Sem {{ subject.semester }} Sec {{
+                                    subject.section }})</option>
                                 {% endfor %}
                             </select>
                         </div>
-                        <div class="col-auto">
-                            <button type="submit" class="btn btn-primary btn-lg">
+                        <div class="col-md-3">
+                            <input type="date" name="session_date"
+                                class="form-control bg-dark text-light border-secondary" required
+                                value="{{ now.split(',')[0].strip() }}">
+                        </div>
+                        <div class="col-md-4">
+                            <input type="text" name="session_name"
+                                class="form-control bg-dark text-light border-secondary"
+                                placeholder="Session/Topic Name (Optional)">
+                        </div>
+                        <div class="col-12 mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg px-5">
                                 <i class="fas fa-play me-2"></i>Start Class
                             </button>
                         </div>

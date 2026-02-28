@@ -18,48 +18,39 @@
         <div class="card mb-4 border-0 shadow-sm">
             <div class="card-body p-4">
                 <form method="post" class="row g-3">
-                    <div class="col-md-4">
-                        <label for="subject_id" class="form-label fw-bold">Select Subject</label>
-                        <select name="subject_id" class="form-select" id="subject_id" {{ 'disabled' if active else '' }}
-                            required>
-                            {% if current_subject %}
-                            <option value="" disabled selected>{{ current_subject }}</option>
-                            {% else %}
-                            <option value="" disabled selected>Select Subject</option>
+                    {% if active %}
+                    <div class="col-md-9">
+                        <div class="d-flex align-items-center bg-light rounded p-3 border">
+                            <div class="me-4">
+                                <span class="d-block small text-muted text-uppercase fw-bold mb-1">Subject</span>
+                                <span class="fs-5 fw-bold text-dark">{{ current_subject }}</span>
+                            </div>
+                            <div class="me-4 border-start px-4">
+                                <span class="d-block small text-muted text-uppercase fw-bold mb-1">Date</span>
+                                <span class="fs-5 fw-bold text-dark">{{ current_date }}</span>
+                            </div>
+                            {% if session_name %}
+                            <div class="border-start px-4">
+                                <span class="d-block small text-muted text-uppercase fw-bold mb-1">Topic</span>
+                                <span class="fs-5 fw-bold text-dark">{{ session_name }}</span>
+                            </div>
                             {% endif %}
-                            {% for subject in subjects %}
-                            <option value="{{ subject.subject_id }}">{{ subject.subject_name }} ({{ subject.class_name
-                                }} - {{ subject.department }} Sem {{ subject.semester }} Sec {{ subject.section }})
-                            </option>
-                            {% endfor %}
-                        </select>
+                        </div>
                     </div>
-
-                    <div class="col-md-3">
-                        <label for="session_date" class="form-label fw-bold">Date</label>
-                        <input type="date" name="session_date" class="form-control" id="session_date" {{ 'disabled' if
-                            active else '' }} required
-                            value="{{ current_date if active else now.split(',')[0].strip() }}">
-                    </div>
-
-                    <div class="col-md-3">
-                        <label for="session_name" class="form-label fw-bold">Session Name / Topic (Optional)</label>
-                        <input type="text" name="session_name" class="form-control" id="session_name" {{ 'disabled' if
-                            active else '' }} placeholder="e.g. Chapter 1" value="{{ session_name if active else '' }}">
-                    </div>
-
-                    <div class="col-md-2 d-flex align-items-end">
-                        {% if not active %}
-                        <button type="submit" name="action" value="start"
-                            class="btn btn-primary w-100 fw-bold shadow-sm">
-                            <i class="fas fa-play me-2"></i> Start
+                    <div class="col-md-3 d-flex align-items-center">
+                        <button type="submit" name="action" value="stop"
+                            class="btn btn-danger w-100 btn-lg fw-bold shadow-sm">
+                            <i class="fas fa-stop me-2"></i> Stop Session
                         </button>
-                        {% else %}
-                        <button type="submit" name="action" value="stop" class="btn btn-danger w-100 fw-bold shadow-sm">
-                            <i class="fas fa-stop me-2"></i> Stop
-                        </button>
-                        {% endif %}
                     </div>
+                    {% else %}
+                    <div class="col-12 text-center py-4">
+                        <p class="text-muted mb-3">No active session. Please start a session from your dashboard.</p>
+                        <a href="{{ url_for('teacher_dashboard') }}" class="btn btn-primary px-5 fw-bold shadow-sm">
+                            <i class="fas fa-arrow-left me-2"></i> Go to Dashboard
+                        </a>
+                    </div>
+                    {% endif %}
                 </form>
             </div>
         </div>

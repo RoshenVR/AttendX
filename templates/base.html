@@ -56,10 +56,10 @@
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('login') }}">Login</a></li>
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('register') }}">Register</a></li>
                     {% endif %}
-                    <li class="nav-item ms-lg-3">
-                        <button id="darkModeToggle" class="btn btn-outline-light btn-sm rounded-circle"
-                            aria-label="Toggle Dark Mode">
-                            <i class="fas fa-moon"></i>
+                    <li class="nav-item ms-lg-3 d-flex align-items-center">
+                        <button id="darkModeToggle" class="btn btn-theme-toggle rounded-circle shadow-sm"
+                            aria-label="Toggle Dark Mode" title="Toggle Dark/Light Mode">
+                            <i class="fas fa-moon toggle-icon"></i>
                         </button>
                     </li>
                 </ul>
@@ -109,17 +109,25 @@
 
         if (darkModeToggle) {
             darkModeToggle.addEventListener('click', () => {
-                body.classList.toggle('dark-mode');
+                // Add spin animation class to icon
+                icon.classList.add('spin-animation');
 
-                if (body.classList.contains('dark-mode')) {
-                    localStorage.setItem('darkMode', 'enabled');
-                    icon.classList.remove('fa-moon');
-                    icon.classList.add('fa-sun');
-                } else {
-                    localStorage.setItem('darkMode', 'disabled');
-                    icon.classList.remove('fa-sun');
-                    icon.classList.add('fa-moon');
-                }
+                setTimeout(() => {
+                    body.classList.toggle('dark-mode');
+
+                    if (body.classList.contains('dark-mode')) {
+                        localStorage.setItem('darkMode', 'enabled');
+                        icon.classList.remove('fa-moon');
+                        icon.classList.add('fa-sun');
+                    } else {
+                        localStorage.setItem('darkMode', 'disabled');
+                        icon.classList.remove('fa-sun');
+                        icon.classList.add('fa-moon');
+                    }
+
+                    // Remove animation class after spin completes
+                    setTimeout(() => icon.classList.remove('spin-animation'), 400);
+                }, 200); // Swap icon mid-spin
             });
         }
     </script>

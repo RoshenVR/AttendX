@@ -569,3 +569,56 @@ body.dark-mode .badge.bg-inactive {
     background-color: #475569 !important;
     color: #f8fafc;
 }
+
+/* =========================================
+   THEME TOGGLE ENHANCEMENTS
+   ========================================= */
+.btn-theme-toggle {
+    width: 45px;
+    height: 45px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--gradient-primary);
+    border: none;
+    color: white !important;
+    font-size: 1.2rem;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    z-index: 1050;
+}
+
+.btn-theme-toggle:hover {
+    transform: scale(1.1) rotate(15deg);
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.5);
+}
+
+.toggle-icon {
+    transition: transform 0.3s ease;
+}
+
+.spin-animation {
+    animation: iconSpin 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes iconSpin {
+    0% {
+        transform: rotate(0deg) scale(1);
+        opacity: 1;
+    }
+
+    50% {
+        transform: rotate(180deg) scale(0.2);
+        opacity: 0;
+    }
+
+    100% {
+        transform: rotate(360deg) scale(1);
+        opacity: 1;
+    }
+}
+
+body.dark-mode .btn-theme-toggle {
+    background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+    box-shadow: 0 0 15px rgba(245, 158, 11, 0.3);
+}
