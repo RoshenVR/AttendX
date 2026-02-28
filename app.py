@@ -604,6 +604,116 @@ def view_attendance():
     return render_template("attendance.html", attendance=records, total=len(records), 
                           subjects=subjects, selected_subject=subject_filter)
 
+# ---------------- PROFESSIONAL ATTENDANCE VIEW ----------------
+@app.route("/attendance/view")
+def attendance_view():
+    if 'user' not in session:
+        return redirect(url_for('login'))
+    
+    if not supabase: return "DB Error", 500
+    
+    role = session.get('role')
+    user_id = session.get('user')
+    
+    # Get filter parameters
+    subject_id = request.args.get('subject_id', '')
+    from_date = request.args.get('from_date', '')
+    to_date = request.args.get('to_date', '')
+    search = request.args.get('search', '').strip()
+    
+    try:
+        # Get subjects based on role
+        if role == 'student':
+            subjects = []
+        else:
+            subjects = supabase.table("subjects").select("*").order("subject_name").execute().data
+        
+        # Build query with role-based filtering
+        query = supabase.table("attendance_records").select("*")
+        
+        # Role-based data restriction
+        if role == 'student':
+            query = query.eq("sid", user_id)
+        # For teacher and admin, no restriction on user_id (they can see all students)
+        
+        # Apply filters
+        if subject_id:
+            query = query.eq("subject_id", subject_id)
+        
+        if from_date:
+            query = query.gte("date", from_date)
+        
+        if to_date:
+            query = query.lte("date", to_date)
+        
+        if search and role != 'student':
+            # Search by name (case-insensitive partial match)
+            query = query.ilike("name", f"%{search}%")
+        
+        # Execute query
+        records = query.order("date", desc=True).order("time", desc=True).execute().data
+        
+        # Calculate attendance summary per student
+        student_summary = {}
+        
+        for record in records:
+            sid = record['sid']
+            subject_id_rec = record.get('subject_id')
+            
+            # Create unique key for student-subject combination
+            key = f"{sid}_{subject_id_rec}" if subject_id_rec else sid
+            
+            if key not in student_summary:
+                student_summary[key] = {
+                    'sid': sid,
+                    'name': record['name'],
+                    'subject': record.get('subject', 'N/A'),
+                    'subject_id': subject_id_rec,
+                    'present': 0,
+                    'total': 0,
+                    'percentage': 0,
+                    'badge_class': 'badge-red'
+                }
+            
+            student_summary[key]['total'] += 1
+            student_summary[key]['present'] += 1  # All records in attendance_records are "present"
+        
+        # Calculate percentages and badge classes
+        for key in student_summary:
+            summary = student_summary[key]
+            if summary['total'] > 0:
+                summary['percentage'] = round((summary['present'] / summary['total']) * 100, 2)
+                
+                # Assign badge class
+                if summary['percentage'] >= 75:
+                    summary['badge_class'] = 'badge-green'
+                elif summary['percentage'] >= 60:
+                    summary['badge_class'] = 'badge-yellow'
+                else:
+                    summary['badge_class'] = 'badge-red'
+        
+        # Convert to list for template
+        summary_list = list(student_summary.values())
+        
+        # Sort by name
+        summary_list.sort(key=lambda x: x['name'])
+        
+    except Exception as e:
+        print(f"Attendance View Error: {e}")
+        records = []
+        subjects = []
+        summary_list = []
+    
+    return render_template("attendance_view.html", 
+                          attendance=records, 
+                          summary=summary_list,
+                          subjects=subjects,
+                          selected_subject=subject_id,
+                          from_date=from_date,
+                          to_date=to_date,
+                          search=search,
+                          role=role)
+
 @app.route("/export")
 def export():
     if not login_required('teacher'):

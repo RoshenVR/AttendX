@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="d-flex align-items-center mb-4">
+            <a href="{% if role == 'student' %}{{ url_for('student_dashboard') }}{% elif role == 'teacher' %}{{ url_for('teacher_dashboard') }}{% else %}{{ url_for('admin_dashboard') }}{% endif %}"
+                class="btn btn-outline-secondary rounded-circle me-3"
+                style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <h2 class="mb-0 fw-bold header-highlight">
+                <i class="fas fa-chart-bar me-2"></i>Attendance Analytics
+            </h2>
+        </div>
+    </div>
+</div>
+
+<!-- Filters Section -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-transparent border-0 py-3">
+        <h5 class="text-uppercase text-muted small fw-bold ls-1 mb-0">
+            <i class="fas fa-filter me-2"></i>Filters
+        </h5>
+    </div>
+    <div class="card-body">
+        <form method="get" action="{{ url_for('attendance_view') }}">
+            <div class="row g-3">
+                <!-- Subject Filter (Not for students) -->
+                {% if role != 'student' %}
+                <div class="col-md-3">
+                    <label class="form-label text-muted small">Subject</label>
+                    <select name="subject_id" class="form-select bg-dark text-light border-secondary">
+                        <option value="">All Subjects</option>
+                        {% for subject in subjects %}
+                        <option value="{{ subject.subject_id }}" {% if selected_subject and
+                            selected_subject|string==subject.subject_id|string %}selected{% endif %}>
+                            {{ subject.subject_name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endif %}
+
+                <!-- Date Range -->
+                <div class="col-md-{% if role == 'student' %}4{% else %}3{% endif %}">
+                    <label class="form-label text-muted small">From Date</label>
+                    <input type="date" name="from_date" value="{{ from_date }}"
+                        class="form-control bg-dark text-light border-secondary">
+                </div>
+
+                <div class="col-md-{% if role == 'student' %}4{% else %}3{% endif %}">
+                    <label class="form-label text-muted small">To Date</label>
+                    <input type="date" name="to_date" value="{{ to_date }}"
+                        class="form-control bg-dark text-light border-secondary">
+                </div>
+
+                <!-- Search Bar (Only for teacher/admin) -->
+                {% if role != 'student' %}
+                <div class="col-md-3">
+                    <label class="form-label text-muted small">Search Student</label>
+                    <input type="text" name="search" value="{{ search }}" placeholder="Name or ID..."
+                        class="form-control bg-dark text-light border-secondary">
+                </div>
+                {% endif %}
+
+                <!-- Apply Button -->
+                <div class="col-md-{% if role == 'student' %}4{% else %}12{% endif %} d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search me-2"></i>Apply Filters
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+{% if summary %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h5 class="text-uppercase text-muted small fw-bold ls-1 mb-3">
+            <i class="fas fa-chart-pie me-2"></i>Attendance Summary
+        </h5>
+    </div>
+    {% for student in summary %}
+    <div class="col-md-6 col-lg-4 mb-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <h6 class="fw-bold mb-1">{{ student.name }}</h6>
+                        <small class="text-muted">{{ student.sid }}</small>
+                    </div>
+                    <span class="badge {{ student.badge_class }} rounded-pill px-3 py-2">
+                        {{ student.percentage }}%
+                    </span>
+                </div>
+
+                {% if student.subject %}
+                <div class="mb-2">
+                    <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3">
+                        {{ student.subject }}
+                    </span>
+                </div>
+                {% endif %}
+
+                <div class="row text-center mt-3">
+                    <div class="col-4">
+                        <div class="text-muted small">Total</div>
+                        <div class="fw-bold fs-5">{{ student.total }}</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="text-muted small">Present</div>
+                        <div class="fw-bold fs-5 text-success">{{ student.present }}</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="text-muted small">Absent</div>
+                        <div class="fw-bold fs-5 text-danger">{{ student.total - student.present }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- Detailed Records Table -->
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-transparent border-0 py-3 d-flex justify-content-between align-items-center">
+        <h5 class="text-uppercase text-muted small fw-bold ls-1 mb-0">
+            <i class="fas fa-table me-2"></i>Detailed Records
+        </h5>
+        <div class="bg-light px-3 py-1 rounded-pill">
+            <span class="text-muted small">Total Records:</span>
+            <span class="fw-bold text-primary">{{ attendance|length }}</span>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        {% if role != 'student' %}
+                        <th scope="col" class="ps-4 py-3 text-muted small text-uppercase">Student</th>
+                        <th scope="col" class="py-3 text-muted small text-uppercase">ID</th>
+                        {% endif %}
+                        <th scope="col" class="py-3 text-muted small text-uppercase">Subject</th>
+                        <th scope="col" class="py-3 text-muted small text-uppercase">Date</th>
+                        <th scope="col" class="pe-4 py-3 text-muted small text-uppercase text-end">Time</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in attendance %}
+                    <tr>
+                        {% if role != 'student' %}
+                        <td class="ps-4 fw-bold text-dark">{{ record.name }}</td>
+                        <td class="text-muted">{{ record.sid }}</td>
+                        {% endif %}
+                        <td>
+                            <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3">
+                                {{ record.subject }}
+                            </span>
+                        </td>
+                        <td class="fw-bold text-dark">{{ record.date }}</td>
+                        <td class="pe-4 text-end">
+                            <small class="text-muted">{{ record.time }}</small>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="{% if role != 'student' %}5{% else %}3{% endif %}" class="text-center py-5">
+                            <div class="text-muted opacity-50 mb-3">
+                                <i class="fas fa-folder-open fa-3x"></i>
+                            </div>
+                            <p class="text-muted small fw-bold">No attendance records found.</p>
+                            <p class="text-muted small">Try adjusting your filters.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Badge Styles for Attendance Percentage */
+    .badge-green {
+        background: #16a34a;
+        color: white;
+        font-weight: 600;
+    }
+
+    .badge-yellow {
+        background: #eab308;
+        color: black;
+        font-weight: 600;
+    }
+
+    .badge-red {
+        background: #dc2626;
+        color: white;
+        font-weight: 600;
+    }
+
+    /* Card hover effect */
+    .card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+    }
+
+    /* Header highlight */
+    .header-highlight {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+</style>
+{% endblock %}
