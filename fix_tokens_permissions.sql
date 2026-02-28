@@ -1,15 +1,14 @@
--- Fix Permission Denied for 'valid_tokens' table
--- Run this in your Supabase SQL Editor
+-- FINAL FIX for Permission Denied (Run this in Supabase SQL Editor)
 
--- Grant permissions to 'anon' and 'authenticated' roles
-GRANT ALL ON TABLE public.valid_tokens TO anon;
-GRANT ALL ON TABLE public.valid_tokens TO authenticated;
-GRANT ALL ON TABLE public.valid_tokens TO service_role;
+-- 1. Disable RLS (Fastest fix for prototypes)
+ALTER TABLE public.valid_tokens DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.attendance_records DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.attendance_sessions DISABLE ROW LEVEL SECURITY;
 
--- If you are still getting errors, you might need to disable RLS for this specific table:
--- ALTER TABLE public.valid_tokens DISABLE ROW LEVEL SECURITY;
+-- 2. Grant FULL access to all roles (anon is what the public app uses)
+GRANT ALL ON TABLE public.valid_tokens TO anon, authenticated, service_role, postgres;
+GRANT ALL ON TABLE public.attendance_records TO anon, authenticated, service_role, postgres;
+GRANT ALL ON TABLE public.attendance_sessions TO anon, authenticated, service_role, postgres;
 
--- Ensure the 'attendance_records' table also has proper permissions for teachers to mark attendance
-GRANT ALL ON TABLE public.attendance_records TO anon;
-GRANT ALL ON TABLE public.attendance_records TO authenticated;
-GRANT ALL ON TABLE public.attendance_records TO service_role;
+-- 3. Grant access to sequences (Required for ID incrementing)
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role, postgres;

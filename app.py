@@ -57,8 +57,16 @@ def generate_token():
     return str(random.randint(100000, 999999))
 
 def generate_qr(token):
-    # Dynamic URL: Use Render's external URL if available, else fallback to local IP
+    # Dynamic URL: Use current request host (works on Render and Local Automatically)
+    # If not in request context, fallback to env or local IP
     server_url = os.environ.get('RENDER_EXTERNAL_URL')
+    try:
+        from flask import request
+        if request:
+            server_url = request.host_url.rstrip('/')
+    except:
+        pass
+    
     if not server_url:
         server_url = f"http://{SERVER_IP}:{os.environ.get('PORT', 5000)}"
     
