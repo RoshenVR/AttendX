@@ -148,6 +148,7 @@
                         {% endif %}
                         <th scope="col" class="py-3 text-muted small text-uppercase">Subject</th>
                         <th scope="col" class="py-3 text-muted small text-uppercase">Date</th>
+                        <th scope="col" class="py-3 text-muted small text-uppercase text-center">Status</th>
                         <th scope="col" class="pe-4 py-3 text-muted small text-uppercase text-end">Time</th>
                     </tr>
                 </thead>
@@ -164,6 +165,13 @@
                             </span>
                         </td>
                         <td class="fw-bold text-dark">{{ record.date }}</td>
+                        <td class="text-center">
+                            {% if record.status == 'absent' %}
+                            <span class="badge bg-danger rounded-pill px-3">Absent</span>
+                            {% else %}
+                            <span class="badge bg-success rounded-pill px-3">Present</span>
+                            {% endif %}
+                        </td>
                         <td class="pe-4 text-end">
                             <small class="text-muted">{{ record.time }}</small>
                         </td>

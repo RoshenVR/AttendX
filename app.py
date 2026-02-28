@@ -572,31 +572,31 @@ def teacher():
                         marked_resp = supabase.table("attendance_records").select("sid").eq("session_id", sess_id).execute()
                         marked_sids = [str(m['sid']).strip() for m in marked_resp.data] if marked_resp.data else []
                         
-                        # Identify absentees (those in enrolled but NOT in marked_sids)
-                        # We use strip and lower for a robust comparison
-                        absentees = [s for s in enrolled if str(s['sid']).strip() not in marked_sids]
-                        
-                        print(f"DEBUG: Found {len(enrolled)} enrolled, {len(marked_sids)} marked, resulting in {len(absentees)} absentees.")
-                        
-                        # Insert absentee records
-                        for student in absentees:
-                            rec_date = active_session.get('session_date')
-                            if not rec_date: rec_date = datetime.now().strftime("%d-%m-%Y")
-                            
-                            try:
-                                supabase.table("attendance_records").insert({
-                                    "session_id": sess_id,
-                                    "sid": str(student['sid']).strip(),
-                                    "name": student['name'],
-                                    "subject_id": sub_id,
-                                    "subject": active_session['subject'],
-                                    "date": rec_date,
-                                    "time": datetime.now().strftime("%H:%M:%S"),
-                                    "status": "absent",
-                                    "marked_type": "auto"
-                                }).execute()
-                            except Exception as ie:
-                                print(f"Error inserting absentee {student['sid']}: {ie}")
+                # Identify absentees (those in enrolled but NOT in marked_sids)
+                # We use strip for a robust comparison
+                absentees = [s for s in enrolled if str(s['sid']).strip() not in marked_sids]
+                
+                print(f"DEBUG: Found {len(enrolled)} enrolled, {len(marked_sids)} marked, resulting in {len(absentees)} absentees.")
+                
+                # Use a consistent date format: %d-%m-%Y (same as student QR marking)
+                rec_date = datetime.now().strftime("%d-%m-%Y")
+                
+                # Insert absentee records
+                for student in absentees:
+                    try:
+                        supabase.table("attendance_records").insert({
+                            "session_id": sess_id,
+                            "sid": str(student['sid']).strip(),
+                            "name": student['name'],
+                            "subject_id": sub_id,
+                            "subject": active_session['subject'],
+                            "date": rec_date,
+                            "time": datetime.now().strftime("%H:%M:%S"),
+                            "status": "absent",
+                            "marked_type": "auto"
+                        }).execute()
+                    except Exception as ie:
+                        print(f"Error inserting absentee {student['sid']}: {ie}")
 
                 supabase.table("attendance_sessions").update({"active": False}).eq("active", True).execute()
                 # 3. Cleanup valid_tokens (Safe wrap to prevent crash on permission error)
@@ -886,7 +886,8 @@ def attendance_view():
                 }
             
             student_summary[key]['total'] += 1
-            student_summary[key]['present'] += 1  # All records in attendance_records are "present"
+            if record.get('status', 'present') == 'present':
+                student_summary[key]['present'] += 1
         
         # Calculate percentages and badge classes
         for key in student_summary:
@@ -938,9 +939,9 @@ def export():
     
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(["Session", "Name", "ID", "Subject", "Date", "Time"])
+    writer.writerow(["Session", "Name", "ID", "Subject", "Date", "Time", "Status"])
     for r in records:
-        writer.writerow([r['session_id'], r['name'], r['sid'], r['subject'], r['date'], r['time']])
+        writer.writerow([r['session_id'], r['name'], r['sid'], r['subject'], r['date'], r['time'], r.get('status', 'present')])
 
     output.seek(0)
     return send_file(
@@ -1092,10 +1093,11 @@ def student_report():
         # Map: subject_id -> set(attended_session_ids)
         my_attendance_map = {}
         for r in my_records:
-            sub_id = r['subject_id']
-            if sub_id not in my_attendance_map:
-                my_attendance_map[sub_id] = set()
-            my_attendance_map[sub_id].add(r['session_id'])
+            if r.get('status', 'present') == 'present':
+                sub_id = r['subject_id']
+                if sub_id not in my_attendance_map:
+                    my_attendance_map[sub_id] = set()
+                my_attendance_map[sub_id].add(r['session_id'])
             
         # 4. Build Report
         report = []
