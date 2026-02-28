@@ -17,34 +17,46 @@
 
         <div class="card mb-4 border-0 shadow-sm">
             <div class="card-body p-4">
-                <form method="post" class="row g-3 align-items-center">
-                    <div class="col-auto flex-grow-1">
-                        <label for="subject_id" class="visually-hidden">Subject</label>
-                        <div class="input-group">
-                            <span class="input-group-text bg-light border-end-0"><i class="fas fa-book"></i></span>
-                            <select name="subject_id" class="form-select border-start-0 ps-0" id="subject_id"
-                                {{ 'disabled' if active else '' }} required style="font-size: 1.1rem;">
-                                {% if current_subject %}
-                                <option value="" disabled selected>{{ current_subject }}</option>
-                                {% else %}
-                                <option value="" disabled selected>Select Subject</option>
-                                {% endif %}
-                                {% for subject in subjects %}
-                                <option value="{{ subject.subject_id }}">{{ subject.subject_name }} ({{
-                                    subject.class_name }})</option>
-                                {% endfor %}
-                            </select>
-                        </div>
+                <form method="post" class="row g-3">
+                    <div class="col-md-4">
+                        <label for="subject_id" class="form-label fw-bold">Select Subject</label>
+                        <select name="subject_id" class="form-select" id="subject_id" {{ 'disabled' if active else '' }}
+                            required>
+                            {% if current_subject %}
+                            <option value="" disabled selected>{{ current_subject }}</option>
+                            {% else %}
+                            <option value="" disabled selected>Select Subject</option>
+                            {% endif %}
+                            {% for subject in subjects %}
+                            <option value="{{ subject.subject_id }}">{{ subject.subject_name }} ({{ subject.class_name
+                                }} - {{ subject.department }} Sem {{ subject.semester }} Sec {{ subject.section }})
+                            </option>
+                            {% endfor %}
+                        </select>
                     </div>
-                    <div class="col-auto">
+
+                    <div class="col-md-3">
+                        <label for="session_date" class="form-label fw-bold">Date</label>
+                        <input type="date" name="session_date" class="form-control" id="session_date" {{ 'disabled' if
+                            active else '' }} required
+                            value="{{ current_date if active else now.split(',')[0].strip() }}">
+                    </div>
+
+                    <div class="col-md-3">
+                        <label for="session_name" class="form-label fw-bold">Session Name / Topic (Optional)</label>
+                        <input type="text" name="session_name" class="form-control" id="session_name" {{ 'disabled' if
+                            active else '' }} placeholder="e.g. Chapter 1" value="{{ session_name if active else '' }}">
+                    </div>
+
+                    <div class="col-md-2 d-flex align-items-end">
                         {% if not active %}
                         <button type="submit" name="action" value="start"
-                            class="btn btn-primary px-4 fw-bold shadow-sm">
-                            <i class="fas fa-play me-2"></i> Start Attendance
+                            class="btn btn-primary w-100 fw-bold shadow-sm">
+                            <i class="fas fa-play me-2"></i> Start
                         </button>
                         {% else %}
-                        <button type="submit" name="action" value="stop" class="btn btn-danger px-4 fw-bold shadow-sm">
-                            <i class="fas fa-stop me-2"></i> Stop Attendance
+                        <button type="submit" name="action" value="stop" class="btn btn-danger w-100 fw-bold shadow-sm">
+                            <i class="fas fa-stop me-2"></i> Stop
                         </button>
                         {% endif %}
                     </div>
@@ -93,6 +105,81 @@
                 {% endif %}
             </div>
         </div>
+
+        {% if active %}
+        <!-- Manual Attendance Section -->
+        <div class="card mt-4 border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
+                <h5 class="fw-bold"><i class="fas fa-user-check me-2 text-primary"></i> Manual Attendance</h5>
+                <p class="text-muted small">Mark attendance for students who cannot scan the QR code.</p>
+            </div>
+            <div class="card-body">
+                {% if enrolled_students %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Student ID</th>
+                                <th>Name</th>
+                                <th>Status</th>
+                                <th class="text-end">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for student in enrolled_students %}
+                            <tr>
+                                <td>{{ student.sid }}</td>
+                                <td><strong>{{ student.name }}</strong></td>
+                                <td>
+                                    {% if student.sid in present_sids %}
+                                    <span class="badge bg-success">Present</span>
+                                    {{ '<small class="text-muted ms-1">(Manual)</small>'|safe if student.sid in
+                                    manual_present_sids else '<small class="text-muted ms-1">(QR)</small>'|safe }}
+                                    {% elif student.sid in absent_sids %}
+                                    <span class="badge bg-danger">Absent</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">Pending</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <form method="POST" action="{{ url_for('teacher_manual_mark') }}" class="d-inline">
+                                        <input type="hidden" name="student_sid" value="{{ student.sid }}">
+                                        <input type="hidden" name="student_name" value="{{ student.name }}">
+
+                                        {% if student.sid not in present_sids %}
+                                        <button type="submit" name="mark_status" value="present"
+                                            class="btn btn-sm btn-outline-success">
+                                            Mark Present
+                                        </button>
+                                        {% endif %}
+
+                                        {% if student.sid not in absent_sids and student.sid not in present_sids %}
+                                        <button type="submit" name="mark_status" value="absent"
+                                            class="btn btn-sm btn-outline-danger ms-1">
+                                            Mark Absent
+                                        </button>
+                                        {% endif %}
+
+                                        {% if student.sid in present_sids or student.sid in absent_sids %}
+                                        <button type="submit" name="mark_status" value="clear"
+                                            class="btn btn-sm btn-outline-secondary ms-1">
+                                            Clear
+                                        </button>
+                                        {% endif %}
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-center text-muted my-3">No students found matching this subject's
+                    department/semester/section.</p>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
 
         <div class="mt-5 text-center">
             <a href="{{ url_for('view_attendance') }}" class="btn btn-link text-decoration-none text-muted fw-bold">

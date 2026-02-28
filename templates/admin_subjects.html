@@ -28,15 +28,47 @@
         <form method="POST">
             <input type="hidden" name="action" value="add">
             <div class="row g-3">
-                <div class="col-md-5">
+                <div class="col-md-3">
                     <label class="form-label">Subject Name</label>
                     <input type="text" name="subject_name" class="form-control bg-dark text-light border-secondary"
                         placeholder="e.g., Mathematics" required>
                 </div>
-                <div class="col-md-5">
-                    <label class="form-label">Class/Batch</label>
+                <div class="col-md-2">
+                    <label class="form-label">Class</label>
                     <input type="text" name="class_name" class="form-control bg-dark text-light border-secondary"
-                        placeholder="e.g., CS-A, Year 3" required>
+                        placeholder="e.g., CS-A" required>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Department</label>
+                    <select name="department" class="form-select bg-dark text-light border-secondary" required>
+                        <option value="Computer Science">Computer Science</option>
+                        <option value="Information Technology">Information Technology</option>
+                        <option value="Electronics">Electronics</option>
+                        <option value="Mechanical">Mechanical</option>
+                        <option value="Civil">Civil</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Semester</label>
+                    <select name="semester" class="form-select bg-dark text-light border-secondary" required>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                    </select>
+                </div>
+                <div class="col-md-1">
+                    <label class="form-label">Sec</label>
+                    <select name="section" class="form-select bg-dark text-light border-secondary" required>
+                        <option value="A">A</option>
+                        <option value="B">B</option>
+                        <option value="C">C</option>
+                        <option value="D">D</option>
+                    </select>
                 </div>
                 <div class="col-md-2 d-flex align-items-end">
                     <button type="submit" class="btn btn-primary w-100">
@@ -61,7 +93,10 @@
                     <tr>
                         <th>ID</th>
                         <th>Subject Name</th>
-                        <th>Class/Batch</th>
+                        <th>Class</th>
+                        <th>Dept</th>
+                        <th>Sem</th>
+                        <th>Sec</th>
                         <th>Added By</th>
                         <th>Created At</th>
                         <th class="text-end">Actions</th>
@@ -73,6 +108,9 @@
                         <td>{{ subject.subject_id }}</td>
                         <td><strong>{{ subject.subject_name }}</strong></td>
                         <td><span class="badge bg-secondary">{{ subject.class_name }}</span></td>
+                        <td>{{ subject.department }}</td>
+                        <td>{{ subject.semester }}</td>
+                        <td>{{ subject.section }}</td>
                         <td>{{ subject.admin_name or 'N/A' }}</td>
                         <td>{{ subject.created_at[:19] if subject.created_at else 'N/A' }}</td>
                         <td class="text-end">
@@ -121,9 +159,43 @@
                             value="{{ subject.subject_name }}" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Class/Batch</label>
+                        <label class="form-label">Class</label>
                         <input type="text" name="class_name" class="form-control bg-dark text-light border-secondary"
                             value="{{ subject.class_name }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Department</label>
+                        <select name="department" class="form-select bg-dark text-light border-secondary" required>
+                            <option value="Computer Science" {% if subject.department=='Computer Science' %}selected{%
+                                endif %}>Computer Science</option>
+                            <option value="Information Technology" {% if subject.department=='Information Technology'
+                                %}selected{% endif %}>Information Technology</option>
+                            <option value="Electronics" {% if subject.department=='Electronics' %}selected{% endif %}>
+                                Electronics</option>
+                            <option value="Mechanical" {% if subject.department=='Mechanical' %}selected{% endif %}>
+                                Mechanical</option>
+                            <option value="Civil" {% if subject.department=='Civil' %}selected{% endif %}>Civil</option>
+                        </select>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Semester</label>
+                            <select name="semester" class="form-select bg-dark text-light border-secondary" required>
+                                {% for i in range(1, 9) %}
+                                <option value="{{ i }}" {% if subject.semester|string==i|string %}selected{% endif %}>{{
+                                    i }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Section</label>
+                            <select name="section" class="form-select bg-dark text-light border-secondary" required>
+                                {% for sec in ['A', 'B', 'C', 'D'] %}
+                                <option value="{{ sec }}" {% if subject.section==sec %}selected{% endif %}>{{ sec }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer border-secondary">

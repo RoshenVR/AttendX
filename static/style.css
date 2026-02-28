@@ -450,3 +450,122 @@ h6 {
 .alert-custom .btn-close {
     filter: invert(1) grayscale(100%) brightness(200%);
 }
+
+/* =========================================
+   DARK MODE OVERRIDES
+   ========================================= */
+body.dark-mode {
+    --bg-body: #0f172a;
+    --bg-card: #1e293b;
+    --bg-input: #334155;
+
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+
+    --gradient-bg: linear-gradient(135deg, #020617 0%, #1e1b4b 100%);
+
+    background: var(--gradient-bg);
+    color: var(--text-main);
+}
+
+body.dark-mode .card {
+    background: var(--bg-card);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+}
+
+body.dark-mode .navbar {
+    background: rgba(15, 23, 42, 0.85);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+body.dark-mode .navbar-brand {
+    color: var(--text-main) !important;
+}
+
+body.dark-mode .nav-link {
+    color: var(--text-muted) !important;
+}
+
+body.dark-mode .nav-link:hover,
+body.dark-mode .nav-link.active {
+    color: var(--primary) !important;
+}
+
+body.dark-mode .form-control,
+body.dark-mode .form-select,
+body.dark-mode .input-group-text {
+    background-color: var(--bg-input) !important;
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-main) !important;
+}
+
+body.dark-mode .form-control:focus,
+body.dark-mode .form-select:hover,
+body.dark-mode .form-select:focus {
+    background-color: #475569 !important;
+}
+
+body.dark-mode .table {
+    color: var(--text-main);
+}
+
+body.dark-mode .table tbody tr {
+    background: var(--bg-card);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+body.dark-mode .table tbody tr:hover {
+    background: #334155;
+}
+
+body.dark-mode .text-muted {
+    color: var(--text-muted) !important;
+}
+
+body.dark-mode .bg-light {
+    background-color: #334155 !important;
+}
+
+body.dark-mode .bg-white {
+    background-color: var(--bg-card) !important;
+}
+
+body.dark-mode h1,
+body.dark-mode h2,
+body.dark-mode h3,
+body.dark-mode h4,
+body.dark-mode h5,
+body.dark-mode h6,
+body.dark-mode strong {
+    color: var(--text-main);
+}
+
+body.dark-mode .border-glow {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.05);
+}
+
+body.dark-mode .table-light {
+    background-color: #334155;
+    color: var(--text-main);
+}
+
+body.dark-mode .table-light th {
+    background-color: transparent;
+    color: var(--primary);
+}
+
+body.dark-mode .modal-content {
+    background-color: var(--bg-card) !important;
+    color: var(--text-main);
+}
+
+body.dark-mode .modal-header,
+body.dark-mode .modal-footer {
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode .badge.bg-inactive {
+    background-color: #475569 !important;
+    color: #f8fafc;
+}

@@ -160,6 +160,9 @@ def register():
         name = request.form.get("name")
         sid = request.form.get("sid")
         password = request.form.get("password")
+        department = request.form.get("department", "General")
+        semester = request.form.get("semester", "1")
+        section = request.form.get("section", "A")
 
         if not supabase:
              flash("Database connection error.", "error")
@@ -171,7 +174,10 @@ def register():
                 "name": name, 
                 "password": password, 
                 "role": "student",
-                "status": "pending"
+                "status": "pending",
+                "department": department,
+                "semester": semester,
+                "section": section
             }).execute()
             flash("Registration successful! Please wait for account approval.", "success")
             return redirect(url_for('login'))
@@ -320,12 +326,18 @@ def admin_subjects():
         if action == "add":
             subject_name = request.form.get("subject_name", "").strip()
             class_name = request.form.get("class_name", "").strip()
+            department = request.form.get("department", "General").strip()
+            semester = request.form.get("semester", "1").strip()
+            section = request.form.get("section", "A").strip()
             
             if subject_name and class_name:
                 try:
                     supabase.table("subjects").insert({
                         "subject_name": subject_name,
                         "class_name": class_name,
+                        "department": department,
+                        "semester": semester,
+                        "section": section,
                         "added_by": session['user']
                     }).execute()
                     flash(f"Subject '{subject_name}' added successfully!", "success")
@@ -368,13 +380,19 @@ def edit_subject(subject_id):
     
     subject_name = request.form.get("subject_name", "").strip()
     class_name = request.form.get("class_name", "").strip()
+    department = request.form.get("department", "General").strip()
+    semester = request.form.get("semester", "1").strip()
+    section = request.form.get("section", "A").strip()
     
     if subject_name and class_name:
         if not supabase: return "DB Error", 500
         try:
             supabase.table("subjects").update({
                 "subject_name": subject_name, 
-                "class_name": class_name
+                "class_name": class_name,
+                "department": department,
+                "semester": semester,
+                "section": section
             }).eq("subject_id", subject_id).execute()
             flash("Subject updated successfully!", "success")
         except Exception as e:
@@ -472,7 +490,10 @@ def teacher():
         action = request.form.get("action")
         if action == "start":
             subject_id = request.form.get("subject_id")
-            if subject_id:
+            session_date = request.form.get("session_date")
+            session_name = request.form.get("session_name", "").strip()
+            
+            if subject_id and session_date:
                 try:
                     # Get subject details
                     sub_resp = supabase.table("subjects").select("*").eq("subject_id", subject_id).execute()
@@ -491,6 +512,8 @@ def teacher():
                             "teacher_id": session['user'],
                             "subject_id": subject_id,
                             "subject": subject['subject_name'],
+                            "session_date": session_date,
+                            "session_name": session_name,
                             "active": True,
                             "start_time": datetime.now().isoformat()
                         }).execute()
@@ -502,20 +525,59 @@ def teacher():
                      flash(f"Error starting session: {e}", "error")
 
             else:
-                flash("Please select a subject", "error")
+                flash("Please select a subject and date", "error")
         elif action == "stop":
             try:
+                # 1. Get the currently active session to know which subject we are processing
+                active_resp = supabase.table("attendance_sessions").select("*").eq("active", True).execute()
+                active_session = active_resp.data[0] if active_resp.data else None
+                
+                if active_session:
+                    # Automatically mark absent students
+                    sub_id = active_session['subject_id']
+                    sess_id = active_session['session_id']
+                    
+                    # Fetch subject details to get dept/sem/sec
+                    sub_info = supabase.table("subjects").select("*").eq("subject_id", sub_id).execute().data
+                    if sub_info:
+                        sub = sub_info[0]
+                        dept = sub.get('department')
+                        sem = sub.get('semester')
+                        sec = sub.get('section')
+                        
+                        # Find all enrolled students for this subject
+                        enrolled = supabase.table("users").select("sid, name").eq("role", "student").eq("department", dept).eq("semester", sem).eq("section", sec).execute().data
+                        
+                        # Find students already marked present
+                        present = supabase.table("attendance_records").select("sid").eq("session_id", sess_id).execute().data
+                        present_sids = [p['sid'] for p in present]
+                        
+                        # Identify absentees
+                        absentees = [s for s in enrolled if s['sid'] not in present_sids]
+                        
+                        # Insert absentee records
+                        for student in absentees:
+                            # Use the session_date if available, else current date
+                            rec_date = active_session.get('session_date')
+                            if not rec_date: rec_date = datetime.now().strftime("%d-%m-%Y")
+                            
+                            supabase.table("attendance_records").insert({
+                                "session_id": sess_id,
+                                "sid": student['sid'],
+                                "name": student['name'],
+                                "subject_id": sub_id,
+                                "subject": active_session['subject'],
+                                "date": rec_date,
+                                "time": datetime.now().strftime("%H:%M:%S"),
+                                "status": "absent",
+                                "marked_type": "auto"
+                            }).execute()
+
                 supabase.table("attendance_sessions").update({"active": False}).eq("active", True).execute()
-                supabase.table("valid_tokens").delete().neq("token", "dummy").execute() # Delete all (hackish neq or just get all IDs?)
-                # Delete all tokens:
-                # supabase.table("valid_tokens").delete().gt("created_at", "1970-01-01").execute() involves filtering.
-                # Simplest is likely just to leave them or delete specifically.
-                # Actually we can just leave them, cleanup_tokens deletes expired ones.
-                # But to invalidate current QR immediately:
-                # We can update expiry of all valid tokens to now?
+                supabase.table("valid_tokens").delete().neq("token", "dummy").execute() 
                 supabase.table("valid_tokens").delete().gt("expires_at", "2000-01-01").execute() 
                 
-                flash("Attendance stopped.", "success")
+                flash("Attendance stopped and missing students marked absent.", "success")
                 return redirect(url_for('teacher_dashboard'))
             except Exception as e:
                 flash(f"Error stopping session: {e}", "error")
@@ -572,12 +634,120 @@ def teacher():
         print(f"Teacher Page Error: {e}")
         active_session = None
         subjects = []
+        
+    # Extra data for manual tracking if session is active
+    enrolled_students = []
+    present_sids = []
+    manual_present_sids = []
+    absent_sids = []
+    
+    if active_session:
+        try:
+            sub_id = active_session['subject_id']
+            # Get sub details mapping to department, semester, section
+            sub_details = next((s for s in subjects if s['subject_id'] == sub_id), None)
+            
+            if sub_details:
+                # Fetch eligible students
+                enrolled_students = supabase.table("users").select("sid, name").eq("role", "student")\
+                    .eq("department", sub_details.get("department"))\
+                    .eq("semester", sub_details.get("semester"))\
+                    .eq("section", sub_details.get("section")).execute().data
+                    
+            # Fetch existing records
+            records = supabase.table("attendance_records").select("sid, status, marked_type").eq("session_id", active_session['session_id']).execute().data
+            
+            for r in records:
+                if r.get('status', 'present') == 'present':
+                    present_sids.append(r['sid'])
+                    if r.get('marked_type') == 'manual':
+                        manual_present_sids.append(r['sid'])
+                elif r.get('status') == 'absent':
+                    absent_sids.append(r['sid'])
+                    
+        except Exception as e:
+            print(f"Error fetching manual tracking data: {e}")
     
     return render_template("teacher.html", 
                            active=bool(active_session), 
                            current_subject=active_session['subject'] if active_session else "", 
                            session_id=active_session['session_id'] if active_session else 0,
-                           subjects=subjects)
+                           session_name=active_session.get('session_name', '') if active_session else "",
+                           current_date=active_session.get('session_date', '') if active_session else "",
+                           subjects=subjects,
+                           enrolled_students=enrolled_students,
+                           present_sids=present_sids,
+                           manual_present_sids=manual_present_sids,
+                           absent_sids=absent_sids)
+
+@app.route("/teacher/manual_mark", methods=["POST"])
+def teacher_manual_mark():
+    if not login_required('teacher'):
+        return redirect(url_for('login'))
+        
+    student_sid = request.form.get("student_sid")
+    student_name = request.form.get("student_name")
+    mark_status = request.form.get("mark_status")
+    
+    if not student_sid or not mark_status:
+        flash("Invalid request.", "error")
+        return redirect(url_for('teacher'))
+        
+    if not supabase: return "DB Error", 500
+    
+    try:
+        # Verify active session
+        resp = supabase.table("attendance_sessions").select("*").eq("active", True).execute()
+        active_session = resp.data[0] if resp.data else None
+        
+        if not active_session:
+            flash("No active session to mark attendance for.", "error")
+            return redirect(url_for('teacher'))
+            
+        sess_id = active_session['session_id']
+        sub_id = active_session['subject_id']
+        teacher_id = session['user']
+        
+        # Check if record already exists
+        exist_check = supabase.table("attendance_records").select("*").eq("session_id", sess_id).eq("sid", student_sid).execute()
+        
+        if mark_status == 'clear':
+            if exist_check.data:
+                supabase.table("attendance_records").delete().eq("session_id", sess_id).eq("sid", student_sid).execute()
+                flash(f"Cleared record for {student_name}.", "success")
+        else:
+            rec_date = active_session.get('session_date')
+            if not rec_date: rec_date = datetime.now().strftime("%d-%m-%Y")
+                
+            if exist_check.data:
+                # Update existing record
+                supabase.table("attendance_records").update({
+                    "status": mark_status,
+                    "marked_type": "manual",
+                    "marked_by": teacher_id
+                }).eq("session_id", sess_id).eq("sid", student_sid).execute()
+            else:
+                # Insert new record
+                supabase.table("attendance_records").insert({
+                    "session_id": sess_id,
+                    "sid": student_sid,
+                    "name": student_name,
+                    "subject_id": sub_id,
+                    "subject": active_session['subject'],
+                    "date": rec_date,
+                    "time": datetime.now().strftime("%H:%M:%S"),
+                    "status": mark_status,
+                    "marked_type": "manual",
+                    "marked_by": teacher_id
+                }).execute()
+                
+            flash(f"Marked {student_name} as {mark_status}.", "success")
+            
+    except Exception as e:
+        print(f"Manual Mark Error: {e}")
+        flash("An error occurred while marking manually.", "error")
+        
+    return redirect(url_for('teacher'))
 
 @app.route("/attendance")
 def view_attendance():
