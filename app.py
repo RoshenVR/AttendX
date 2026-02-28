@@ -20,7 +20,11 @@ app.secret_key = os.environ.get("SECRET_KEY", "secret_key_change_this_later")
 
 @app.context_processor
 def inject_now():
-    return {'now': datetime.now().strftime("%d %b %Y, %I:%M %p")}
+    now = datetime.now()
+    return {
+        'now': now.strftime("%d %b %Y, %I:%M %p"),
+        'now_iso': now.strftime("%Y-%m-%d")
+    }
 
 # ---------------- CONFIG ----------------
 QR_REFRESH_TIME = 15          # seconds
@@ -554,32 +558,44 @@ def teacher():
                         sec = sub.get('section')
                         
                         # Find all enrolled students for this subject
-                        enrolled = supabase.table("users").select("sid, name").eq("role", "student").eq("department", dept).eq("semester", sem).eq("section", sec).execute().data
+                        # We use dynamic filtering to handle cases where dept/sem/sec might be empty
+                        query = supabase.table("users").select("sid, name").eq("role", "student")
+                        if dept: query = query.eq("department", dept)
+                        if sem: query = query.eq("semester", sem)
+                        if sec: query = query.eq("section", sec)
                         
-                        # Find students already marked present
-                        present = supabase.table("attendance_records").select("sid").eq("session_id", sess_id).execute().data
-                        present_sids = [p['sid'] for p in present]
+                        enrolled_resp = query.execute()
+                        enrolled = enrolled_resp.data if enrolled_resp.data else []
                         
-                        # Identify absentees
-                        absentees = [s for s in enrolled if s['sid'] not in present_sids]
+                        # Find students already marked (present or otherwise)
+                        marked_resp = supabase.table("attendance_records").select("sid").eq("session_id", sess_id).execute()
+                        marked_sids = [str(m['sid']) for m in marked_resp.data] if marked_resp.data else []
+                        
+                        # Identify absentees (those in enrolled but NOT in marked_sids)
+                        absentees = [s for s in enrolled if str(s['sid']) not in marked_sids]
+                        
+                        print(f"DEBUG: Enrolled: {len(enrolled)}, Marked: {len(marked_sids)}, Absentees: {len(absentees)}")
                         
                         # Insert absentee records
                         for student in absentees:
-                            # Use the session_date if available, else current date
+                            # Use the session_date if available
                             rec_date = active_session.get('session_date')
                             if not rec_date: rec_date = datetime.now().strftime("%d-%m-%Y")
                             
-                            supabase.table("attendance_records").insert({
-                                "session_id": sess_id,
-                                "sid": student['sid'],
-                                "name": student['name'],
-                                "subject_id": sub_id,
-                                "subject": active_session['subject'],
-                                "date": rec_date,
-                                "time": datetime.now().strftime("%H:%M:%S"),
-                                "status": "absent",
-                                "marked_type": "auto"
-                            }).execute()
+                            try:
+                                supabase.table("attendance_records").insert({
+                                    "session_id": sess_id,
+                                    "sid": student['sid'],
+                                    "name": student['name'],
+                                    "subject_id": sub_id,
+                                    "subject": active_session['subject'],
+                                    "date": rec_date,
+                                    "time": datetime.now().strftime("%H:%M:%S"),
+                                    "status": "absent",
+                                    "marked_type": "auto"
+                                }).execute()
+                            except Exception as ie:
+                                print(f"Error inserting absentee {student['sid']}: {ie}")
 
                 supabase.table("attendance_sessions").update({"active": False}).eq("active", True).execute()
                 # 3. Cleanup valid_tokens (Safe wrap to prevent crash on permission error)
