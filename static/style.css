@@ -289,6 +289,8 @@ body.dark-mode .bg-dark-subtle {
     padding: 0.75rem 1rem;
     border-radius: 0.75rem;
     transition: all 0.3s ease;
+    color-scheme: dark;
+    /* Ensures date picker etc. follow theme */
 }
 
 .form-control:focus {
@@ -487,6 +489,11 @@ body.dark-mode .navbar {
 
 body.dark-mode .navbar-brand {
     color: var(--text-main) !important;
+}
+
+body.dark-mode .logo-animate {
+    filter: invert(1) hue-rotate(180deg) brightness(1.5);
+    /* Inverts colors to make them look better on dark background */
 }
 
 body.dark-mode .nav-link {
