@@ -491,9 +491,14 @@ body.dark-mode .navbar-brand {
     color: var(--text-main) !important;
 }
 
-body.dark-mode .logo-animate {
-    filter: brightness(0) invert(1) sepia(1) hue-rotate(210deg) saturate(2) brightness(0.8) opacity(0.5);
-    mix-blend-mode: plus-lighter;
+body.dark-mode .logo-light {
+    display: none !important;
+}
+
+body.dark-mode .logo-dark {
+    display: block !important;
+    filter: none;
+    mix-blend-mode: normal;
 }
 
 body.dark-mode .nav-link {
