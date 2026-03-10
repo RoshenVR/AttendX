@@ -392,9 +392,6 @@ def teacher():
         action = request.form.get("action")
         if action == "start":
             subject_name = request.form.get("subject_name", "").strip()
-            department = request.form.get("department", "").strip()
-            semester = request.form.get("semester", "").strip()
-            section = request.form.get("section", "").strip()
             session_date = request.form.get("session_date")
             session_name = request.form.get("session_name", "").strip()
             
@@ -403,13 +400,10 @@ def teacher():
                     # Deactivate all others first
                     supabase.table("attendance_sessions").update({"active": False}).eq("active", True).execute()
                     
-                    # Insert new session with manual subject and class metadata
+                    # Insert new session with manual subject
                     supabase.table("attendance_sessions").insert({
                         "teacher_id": session['user'],
                         "subject": subject_name,
-                        "department": department,
-                        "semester": semester,
-                        "section": section,
                         "session_date": session_date,
                         "session_name": session_name,
                         "active": True,
@@ -432,18 +426,18 @@ def teacher():
                     # Automatically mark absent students
                     sess_id = active_session['session_id']
                     
-                    # Use class metadata directly from active_session
+                    # Use class metadata directly from active_session (fallback to None if not present)
                     dept = active_session.get('department')
                     sem = active_session.get('semester')
                     sec = active_session.get('section')
                         
                     # Find all enrolled students for this subject
-                    print(f"DEBUG: Looking for students with Dept: '{dept}', Sem: '{sem}', Sec: '{sec}'")
-                    
+                    # If dept/sem/sec are all None/empty, we assume a combined class and fetch ALL students
                     query = supabase.table("users").select("sid, name").eq("role", "student")
-                    if dept: query = query.ilike("department", f"{dept.strip()}")
-                    if sem: query = query.ilike("semester", f"{sem.strip()}")
-                    if sec: query = query.ilike("section", f"{sec.strip()}")
+                    
+                    if dept and dept.strip(): query = query.ilike("department", f"{dept.strip()}")
+                    if sem and sem.strip(): query = query.ilike("semester", f"{sem.strip()}")
+                    if sec and sec.strip(): query = query.ilike("section", f"{sec.strip()}")
                     
                     enrolled_resp = query.execute()
                     enrolled = enrolled_resp.data if enrolled_resp.data else []
@@ -552,10 +546,12 @@ def teacher():
             sec = active_session.get("section")
             
             # Fetch eligible students with robust filtering
+            # Fallback to combined class (all students) if no filters are present
             query = supabase.table("users").select("sid, name").eq("role", "student")
-            if dept: query = query.ilike("department", f"{dept.strip()}")
-            if sem: query = query.ilike("semester", f"{sem.strip()}")
-            if sec: query = query.ilike("section", f"{sec.strip()}")
+            
+            if dept and dept.strip(): query = query.ilike("department", f"{dept.strip()}")
+            if sem and sem.strip(): query = query.ilike("semester", f"{sem.strip()}")
+            if sec and sec.strip(): query = query.ilike("section", f"{sec.strip()}")
             
             enrolled_resp = query.execute()
             enrolled_students = enrolled_resp.data if enrolled_resp.data else []

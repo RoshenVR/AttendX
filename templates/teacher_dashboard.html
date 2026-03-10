@@ -55,44 +55,27 @@
                         class="row justify-content-center g-3 align-items-center">
                         <input type="hidden" name="action" value="start">
                         <div class="row g-3 justify-content-center">
-                            <div class="col-md-3">
-                                <label class="form-label text-muted small d-block text-start">Subject Name</label>
+                            <div class="col-md-6 text-start">
+                                <label class="form-label text-muted small">Subject Name</label>
                                 <input type="text" name="subject_name"
-                                    class="form-control bg-dark text-light border-secondary"
-                                    placeholder="e.g. Physics I" required>
+                                    class="form-control bg-dark text-light border-secondary py-2"
+                                    placeholder="e.g. Physics I (Combined)" required>
                             </div>
-                            <div class="col-md-2">
-                                <label class="form-label text-muted small d-block text-start">Department</label>
-                                <input type="text" name="department"
-                                    class="form-control bg-dark text-light border-secondary" placeholder="e.g. CSE"
-                                    required>
-                            </div>
-                            <div class="col-md-2">
-                                <label class="form-label text-muted small d-block text-start">Semester</label>
-                                <input type="text" name="semester"
-                                    class="form-control bg-dark text-light border-secondary" placeholder="e.g. 5"
-                                    required>
-                            </div>
-                            <div class="col-md-2">
-                                <label class="form-label text-muted small d-block text-start">Section</label>
-                                <input type="text" name="section"
-                                    class="form-control bg-dark text-light border-secondary" placeholder="e.g. B"
-                                    required>
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label text-muted small d-block text-start">Date</label>
+                            <div class="col-md-3 text-start">
+                                <label class="form-label text-muted small">Date</label>
                                 <input type="date" name="session_date"
-                                    class="form-control bg-dark text-light border-secondary" required
+                                    class="form-control bg-dark text-light border-secondary py-2" required
                                     value="{{ now_iso }}">
                             </div>
-                            <div class="col-md-9 mt-3">
+                            <div class="col-md-9 mt-3 text-start">
+                                <label class="form-label text-muted small">Topic / Description</label>
                                 <input type="text" name="session_name"
-                                    class="form-control bg-dark text-light border-secondary"
-                                    placeholder="Optional Topic (e.g. Quantum Mechanics Intro)">
+                                    class="form-control bg-dark text-light border-secondary py-2"
+                                    placeholder="Optional Topic (e.g. Guest Lecture or Mid-Term Review)">
                             </div>
-                            <div class="col-md-3 mt-3">
-                                <button type="submit" class="btn btn-primary w-100">
-                                    <i class="fas fa-play me-2"></i>Start Class
+                            <div class="col-md-9 mt-4">
+                                <button type="submit" class="btn btn-primary btn-lg w-100 py-3 shadow-lg">
+                                    <i class="fas fa-play me-2"></i>Start Combined Class Attendance
                                 </button>
                             </div>
                         </div>
