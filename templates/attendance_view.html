@@ -32,10 +32,9 @@
                     <label class="form-label text-muted small">Subject</label>
                     <select name="subject_id" class="form-select bg-dark text-light border-secondary">
                         <option value="">All Subjects</option>
-                        {% for subject in subjects %}
-                        <option value="{{ subject.subject_id }}" {% if selected_subject and
-                            selected_subject|string==subject.subject_id|string %}selected{% endif %}>
-                            {{ subject.subject_name }}
+                        {% for sub_name in subjects %}
+                        <option value="{{ sub_name }}" {% if selected_subject==sub_name %}selected{% endif %}>
+                            {{ sub_name }}
                         </option>
                         {% endfor %}
                     </select>

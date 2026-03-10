@@ -324,116 +324,9 @@ def delete_user(sid):
 
     return redirect(url_for('admin_users'))
 
-# ---------------- ADMIN SUBJECT MANAGEMENT ----------------
-@app.route("/admin_subjects", methods=["GET", "POST"])
-def admin_subjects():
-    if not login_required('admin'):
-        return redirect(url_for('login'))
-    
-    if not supabase: return "DB Error", 500
-    
-    if request.method == "POST":
-        action = request.form.get("action")
-        
-        if action == "add":
-            subject_name = request.form.get("subject_name", "").strip()
-            class_name = request.form.get("class_name", "").strip()
-            department = request.form.get("department", "General").strip()
-            semester = request.form.get("semester", "1").strip()
-            section = request.form.get("section", "A").strip()
-            
-            if subject_name and class_name:
-                try:
-                    supabase.table("subjects").insert({
-                        "subject_name": subject_name,
-                        "class_name": class_name,
-                        "department": department,
-                        "semester": semester,
-                        "section": section,
-                        "added_by": session['user']
-                    }).execute()
-                    flash(f"Subject '{subject_name}' added successfully!", "success")
-                except Exception as e:
-                    flash(f"Error adding subject: {e}", "error")
-            else:
-                flash("Subject name and class are required.", "error")
-        
-        return redirect(url_for('admin_subjects'))
-    
-    # GET - List all subjects with Admin Name
-    # Using Supabase foreign key select: users!added_by(name)
-    try:
-        response = supabase.table("subjects").select("*, users!subjects_added_by_fkey(name)").order("created_at", desc=True).execute()
-        subjects = response.data
-        
-        # Flatten structure for template: users['name'] -> admin_name
-        # Note: The FK name `subjects_added_by_fkey` assumes the default constraint name. 
-        # If it fails, we fall back to manual join or simpler query.
-        # Given we just created schema, it might be auto-named user_id or similar.
-        # Let's try to just select users(name) and logic handles it.
-        # Actually safer to just fetch users names separately or handle logic in jinja if passed as dict.
-        # But let's try to map it.
-        
-        # Simpler approach: Fetch users and map manually to ensure robustness without relying on exact FK names
-        all_users = {u['sid']: u['name'] for u in supabase.table("users").select("sid, name").execute().data}
-        for s in subjects:
-            s['admin_name'] = all_users.get(s['added_by'], 'Unknown')
-            
-    except Exception as e:
-        print(f"Subject List Error: {e}")
-        subjects = []
-    
-    return render_template("admin_subjects.html", subjects=subjects)
+# ---------------- ADMIN REPORTS ----------------
 
-@app.route("/admin/edit_subject/<int:subject_id>", methods=["POST"])
-def edit_subject(subject_id):
-    if not login_required('admin'):
-        return redirect(url_for('login'))
-    
-    subject_name = request.form.get("subject_name", "").strip()
-    class_name = request.form.get("class_name", "").strip()
-    department = request.form.get("department", "General").strip()
-    semester = request.form.get("semester", "1").strip()
-    section = request.form.get("section", "A").strip()
-    
-    if subject_name and class_name:
-        if not supabase: return "DB Error", 500
-        try:
-            supabase.table("subjects").update({
-                "subject_name": subject_name, 
-                "class_name": class_name,
-                "department": department,
-                "semester": semester,
-                "section": section
-            }).eq("subject_id", subject_id).execute()
-            flash("Subject updated successfully!", "success")
-        except Exception as e:
-            flash(f"Error updating subject: {e}", "error")
-    else:
-        flash("Subject name and class are required.", "error")
-    
-    return redirect(url_for('admin_subjects'))
-
-@app.route("/admin/delete_subject/<int:subject_id>", methods=["POST"])
-def delete_subject(subject_id):
-    if not login_required('admin'):
-        return redirect(url_for('login'))
-    
-    if not supabase: return "DB Error", 500
-    
-    # Check if subject is used in any sessions
-    try:
-        count = supabase.table("attendance_sessions").select("*", count="exact", head=True).eq("subject_id", subject_id).execute().count
-        
-        if count > 0:
-            flash(f"Cannot delete subject: {count} attendance sessions are linked to it.", "error")
-        else:
-            supabase.table("subjects").delete().eq("subject_id", subject_id).execute()
-            flash("Subject deleted successfully!", "success")
-    except Exception as e:
-        flash(f"Error deleting subject: {e}", "error")
-    
-    return redirect(url_for('admin_subjects'))
+# ---------------- ADMIN REPORTS ----------------
 
 
 @app.route("/admin/reports")
@@ -475,8 +368,6 @@ def teacher_dashboard():
         if active_session:
             count = supabase.table("attendance_records").select("*", count="exact", head=True).eq("session_id", active_session['session_id']).execute().count
 
-        subjects = supabase.table("subjects").select("*").order("subject_name").execute().data
-        
         # Pending Approvals (Teachers can also approve)
         pending_students = supabase.table("users").select("*").eq("role", "student").eq("status", "pending").execute().data
         
@@ -484,10 +375,9 @@ def teacher_dashboard():
         print(f"Teacher Dashboard Error: {e}")
         active_session = None
         count = 0
-        subjects = []
         pending_students = []
 
-    return render_template("teacher_dashboard.html", active_session=active_session, attendance_count=count, subjects=subjects, pending_students=pending_students)
+    return render_template("teacher_dashboard.html", active_session=active_session, attendance_count=count, pending_students=pending_students)
 
 # ---------------- TEACHER ATTENDANCE ACTIONS ----------------
 @app.route("/teacher", methods=["GET", "POST"])
@@ -501,43 +391,37 @@ def teacher():
     if request.method == "POST":
         action = request.form.get("action")
         if action == "start":
-            subject_id = request.form.get("subject_id")
+            subject_name = request.form.get("subject_name", "").strip()
+            department = request.form.get("department", "").strip()
+            semester = request.form.get("semester", "").strip()
+            section = request.form.get("section", "").strip()
             session_date = request.form.get("session_date")
             session_name = request.form.get("session_name", "").strip()
             
-            if subject_id and session_date:
+            if subject_name and session_date:
                 try:
-                    # Get subject details
-                    sub_resp = supabase.table("subjects").select("*").eq("subject_id", subject_id).execute()
-                    subject = sub_resp.data[0] if sub_resp.data else None
+                    # Deactivate all others first
+                    supabase.table("attendance_sessions").update({"active": False}).eq("active", True).execute()
                     
-                    if subject:
-                        # Deactivate all others first (Update active=False)
-                        # We have to fetch active ones first? Or just update all?
-                        # Supabase update allows filtering.
-                        # However, update without 'where' on all rows might be restricted by RLS (if enabled). Assuming no RLS for now or using service role.
-                        # Safe way: Update all active=True to False
-                        supabase.table("attendance_sessions").update({"active": False}).eq("active", True).execute()
-                        
-                        # Insert new
-                        supabase.table("attendance_sessions").insert({
-                            "teacher_id": session['user'],
-                            "subject_id": subject_id,
-                            "subject": subject['subject_name'],
-                            "session_date": session_date,
-                            "session_name": session_name,
-                            "active": True,
-                            "start_time": datetime.now().isoformat()
-                        }).execute()
-                        
-                        flash(f"Attendance started for {subject['subject_name']}", "success")
-                    else:
-                        flash("Selected subject not found", "error")
+                    # Insert new session with manual subject and class metadata
+                    supabase.table("attendance_sessions").insert({
+                        "teacher_id": session['user'],
+                        "subject": subject_name,
+                        "department": department,
+                        "semester": semester,
+                        "section": section,
+                        "session_date": session_date,
+                        "session_name": session_name,
+                        "active": True,
+                        "start_time": datetime.now().isoformat()
+                    }).execute()
+                    
+                    flash(f"Attendance started for {subject_name}", "success")
                 except Exception as e:
                      flash(f"Error starting session: {e}", "error")
 
             else:
-                flash("Please select a subject and date", "error")
+                flash("Please enter a subject and date", "error")
         elif action == "stop":
             try:
                 # 1. Get the currently active session to know which subject we are processing
@@ -546,57 +430,51 @@ def teacher():
                 
                 if active_session:
                     # Automatically mark absent students
-                    sub_id = active_session['subject_id']
                     sess_id = active_session['session_id']
                     
-                    # Fetch subject details to get dept/sem/sec
-                    sub_info = supabase.table("subjects").select("*").eq("subject_id", sub_id).execute().data
-                    if sub_info:
-                        sub = sub_info[0]
-                        dept = sub.get('department')
-                        sem = sub.get('semester')
-                        sec = sub.get('section')
+                    # Use class metadata directly from active_session
+                    dept = active_session.get('department')
+                    sem = active_session.get('semester')
+                    sec = active_session.get('section')
                         
-                        # Find all enrolled students for this subject
-                        print(f"DEBUG: Looking for students with Dept: '{dept}', Sem: '{sem}', Sec: '{sec}'")
+                    # Find all enrolled students for this subject
+                    print(f"DEBUG: Looking for students with Dept: '{dept}', Sem: '{sem}', Sec: '{sec}'")
+                    
+                    query = supabase.table("users").select("sid, name").eq("role", "student")
+                    if dept: query = query.ilike("department", f"{dept.strip()}")
+                    if sem: query = query.ilike("semester", f"{sem.strip()}")
+                    if sec: query = query.ilike("section", f"{sec.strip()}")
+                    
+                    enrolled_resp = query.execute()
+                    enrolled = enrolled_resp.data if enrolled_resp.data else []
+                    
+                    # Find students already marked (present or otherwise)
+                    marked_resp = supabase.table("attendance_records").select("sid").eq("session_id", sess_id).execute()
+                    marked_sids = [str(m['sid']).strip() for m in marked_resp.data] if marked_resp.data else []
                         
-                        query = supabase.table("users").select("sid, name").eq("role", "student")
-                        if dept: query = query.ilike("department", f"{dept.strip()}")
-                        if sem: query = query.ilike("semester", f"{sem.strip()}")
-                        if sec: query = query.ilike("section", f"{sec.strip()}")
-                        
-                        enrolled_resp = query.execute()
-                        enrolled = enrolled_resp.data if enrolled_resp.data else []
-                        
-                        # Find students already marked (present or otherwise)
-                        marked_resp = supabase.table("attendance_records").select("sid").eq("session_id", sess_id).execute()
-                        marked_sids = [str(m['sid']).strip() for m in marked_resp.data] if marked_resp.data else []
-                        
-                # Identify absentees (those in enrolled but NOT in marked_sids)
-                # We use strip for a robust comparison
-                absentees = [s for s in enrolled if str(s['sid']).strip() not in marked_sids]
-                
-                print(f"DEBUG: Found {len(enrolled)} enrolled, {len(marked_sids)} marked, resulting in {len(absentees)} absentees.")
-                
-                # Use a consistent date format: %d-%m-%Y (same as student QR marking)
-                rec_date = datetime.now().strftime("%d-%m-%Y")
-                
-                # Insert absentee records
-                for student in absentees:
-                    try:
-                        supabase.table("attendance_records").insert({
-                            "session_id": sess_id,
-                            "sid": str(student['sid']).strip(),
-                            "name": student['name'],
-                            "subject_id": sub_id,
-                            "subject": active_session['subject'],
-                            "date": rec_date,
-                            "time": datetime.now().strftime("%H:%M:%S"),
-                            "status": "absent",
-                            "marked_type": "auto"
-                        }).execute()
-                    except Exception as ie:
-                        print(f"Error inserting absentee {student['sid']}: {ie}")
+                    # Identify absentees
+                    absentees = [s for s in enrolled if str(s['sid']).strip() not in marked_sids]
+                    
+                    print(f"DEBUG: Found {len(enrolled)} enrolled, {len(marked_sids)} marked, resulting in {len(absentees)} absentees.")
+                    
+                    # Use a consistent date format: %d-%m-%Y
+                    rec_date = datetime.now().strftime("%d-%m-%Y")
+                    
+                    # Insert absentee records
+                    for student in absentees:
+                        try:
+                            supabase.table("attendance_records").insert({
+                                "session_id": sess_id,
+                                "sid": str(student['sid']).strip(),
+                                "name": student['name'],
+                                "subject": active_session['subject'],
+                                "date": rec_date,
+                                "time": datetime.now().strftime("%H:%M:%S"),
+                                "status": "absent",
+                                "marked_type": "auto"
+                            }).execute()
+                        except Exception as ie:
+                            print(f"Error inserting absentee {student['sid']}: {ie}")
 
                 supabase.table("attendance_sessions").update({"active": False}).eq("active", True).execute()
                 # 3. Cleanup valid_tokens (Safe wrap to prevent crash on permission error)
@@ -618,12 +496,10 @@ def teacher():
         response = supabase.table("attendance_sessions").select("*").eq("active", True).execute()
         active_session = response.data[0] if response.data else None
         
-        subjects = supabase.table("subjects").select("*").order("subject_name").execute().data
-        
         if active_session:
             cleanup_tokens()
             
-            # 2. Update QR Token logic (Safe wrap to prevent crash on permission error)
+            # 2. Update QR Token logic
             try:
                 # Check latest token
                 tk_resp = supabase.table("valid_tokens").select("created_at").order("created_at", desc=True).limit(1).execute()
@@ -634,7 +510,7 @@ def teacher():
                     generate_new = True
                 else:
                     try:
-                        # Parse timestamp (Supabase is ISO 8601)
+                        # Parse timestamp
                         last_created = datetime.fromisoformat(row['created_at'].replace('Z', '+00:00')) 
                         if (datetime.now(last_created.tzinfo) - last_created).total_seconds() > QR_REFRESH_TIME:
                             generate_new = True
@@ -655,16 +531,13 @@ def teacher():
                     generate_qr(token)
             except Exception as te:
                 print(f"Token Refresh Permission Error: {te}")
-                # We still try to generate a fallback QR if no token exists, 
-                # but it might fail validation later if not in DB.
-                # For now, just logging it so the page doesn't crash.
                 flash("Warning: Token permission error. Attendance might not be markable.", "warning")
+        
+        if not active_session: active_session = None
+        
     except Exception as e:
         print(f"Teacher Page Error: {e}")
-        # Note: Do not reset active_session to None here if it was already fetched on line 590
-        # unless line 590 itself failed. 
-        if not active_session: active_session = None
-        subjects = []
+        active_session = None
         
     # Extra data for manual tracking if session is active
     enrolled_students = []
@@ -674,25 +547,20 @@ def teacher():
     
     if active_session:
         try:
-            sub_id = active_session['subject_id']
-            # Robust mapping for subject details
-            sub_details = next((s for s in subjects if str(s['subject_id']) == str(sub_id)), None)
+            dept = active_session.get("department")
+            sem = active_session.get("semester")
+            sec = active_session.get("section")
             
-            if sub_details:
-                dept = sub_details.get("department")
-                sem = sub_details.get("semester")
-                sec = sub_details.get("section")
-                
-                # Fetch eligible students with robust filtering
-                query = supabase.table("users").select("sid, name").eq("role", "student")
-                if dept: query = query.ilike("department", f"{dept.strip()}")
-                if sem: query = query.ilike("semester", f"{sem.strip()}")
-                if sec: query = query.ilike("section", f"{sec.strip()}")
-                
-                enrolled_resp = query.execute()
-                enrolled_students = enrolled_resp.data if enrolled_resp.data else []
+            # Fetch eligible students with robust filtering
+            query = supabase.table("users").select("sid, name").eq("role", "student")
+            if dept: query = query.ilike("department", f"{dept.strip()}")
+            if sem: query = query.ilike("semester", f"{sem.strip()}")
+            if sec: query = query.ilike("section", f"{sec.strip()}")
+            
+            enrolled_resp = query.execute()
+            enrolled_students = enrolled_resp.data if enrolled_resp.data else []
                     
-            # Fetch existing records and ensure SID comparison is string-safe
+            # Fetch existing records
             records_resp = supabase.table("attendance_records").select("sid, status, marked_type").eq("session_id", active_session['session_id']).execute()
             records = records_resp.data if records_resp.data else []
             
@@ -714,7 +582,6 @@ def teacher():
                            session_id=active_session['session_id'] if active_session else 0,
                            session_name=active_session.get('session_name', '') if active_session else "",
                            current_date=active_session.get('session_date', '') if active_session else "",
-                           subjects=subjects,
                            enrolled_students=enrolled_students,
                            present_sids=present_sids,
                            manual_present_sids=manual_present_sids,
@@ -745,7 +612,6 @@ def teacher_manual_mark():
             return redirect(url_for('teacher'))
             
         sess_id = active_session['session_id']
-        sub_id = active_session['subject_id']
         teacher_id = session['user']
         
         # Check if record already exists
@@ -772,7 +638,6 @@ def teacher_manual_mark():
                     "session_id": sess_id,
                     "sid": student_sid,
                     "name": student_name,
-                    "subject_id": sub_id,
                     "subject": active_session['subject'],
                     "date": rec_date,
                     "time": datetime.now().strftime("%H:%M:%S"),
@@ -796,14 +661,17 @@ def view_attendance():
     
     if not supabase: return "DB Error", 500
     
-    subject_filter = request.args.get('subject_id', None)
+    subject_filter = request.args.get('subject_id', None) # Still using 'subject_id' key for now to keep query param name
     
     try:
-        subjects = supabase.table("subjects").select("*").order("subject_name").execute().data
+        # Get unique subjects from attendance records for filtering
+        records_resp = supabase.table("attendance_records").select("subject").execute()
+        subjects = list(set(r['subject'] for r in records_resp.data if r.get('subject')))
+        subjects.sort()
         
         query = supabase.table("attendance_records").select("*").order("record_id", desc=True)
         if subject_filter:
-            query = query.eq("subject_id", subject_filter)
+            query = query.eq("subject", subject_filter)
         
         records = query.execute().data
     except Exception as e:
@@ -826,17 +694,20 @@ def attendance_view():
     user_id = session.get('user')
     
     # Get filter parameters
-    subject_id = request.args.get('subject_id', '')
+    subject_filter = request.args.get('subject_id', '') # Keeping 'subject_id' as param name for compatibility
     from_date = request.args.get('from_date', '')
     to_date = request.args.get('to_date', '')
     search = request.args.get('search', '').strip()
     
     try:
-        # Get subjects based on role
+        # Get unique subjects for filter dropdown
         if role == 'student':
             subjects = []
         else:
-            subjects = supabase.table("subjects").select("*").order("subject_name").execute().data
+            # Fetch unique subject names from records
+            subj_resp = supabase.table("attendance_records").select("subject").execute()
+            subjects = list(set(r['subject'] for r in subj_resp.data if r.get('subject')))
+            subjects.sort()
         
         # Build query with role-based filtering
         query = supabase.table("attendance_records").select("*")
@@ -844,11 +715,10 @@ def attendance_view():
         # Role-based data restriction
         if role == 'student':
             query = query.eq("sid", user_id)
-        # For teacher and admin, no restriction on user_id (they can see all students)
         
         # Apply filters
-        if subject_id:
-            query = query.eq("subject_id", subject_id)
+        if subject_filter:
+            query = query.eq("subject", subject_filter)
         
         if from_date:
             query = query.gte("date", from_date)
@@ -868,17 +738,16 @@ def attendance_view():
         
         for record in records:
             sid = record['sid']
-            subject_id_rec = record.get('subject_id')
+            subject_name = record.get('subject', 'N/A')
             
             # Create unique key for student-subject combination
-            key = f"{sid}_{subject_id_rec}" if subject_id_rec else sid
+            key = f"{sid}_{subject_name}"
             
             if key not in student_summary:
                 student_summary[key] = {
                     'sid': sid,
                     'name': record['name'],
-                    'subject': record.get('subject', 'N/A'),
-                    'subject_id': subject_id_rec,
+                    'subject': subject_name,
                     'present': 0,
                     'total': 0,
                     'percentage': 0,
@@ -1027,7 +896,6 @@ def student():
                     "session_id": active_session['session_id'],
                     "sid": sid,
                     "name": name,
-                    "subject_id": active_session['subject_id'],
                     "subject": active_session['subject'],
                     "date": datetime.now().strftime("%d-%m-%Y"),
                     "time": datetime.now().strftime("%H:%M:%S")
@@ -1071,51 +939,47 @@ def student_report():
     sid = session['user']
     
     # Complex aggregation logic (Python side to avoid complex SQL/RPC for now)
+    # Aggregation logic by subject name
     try:
-        # 1. Get all subjects
-        subjects = supabase.table("subjects").select("*").execute().data
-        
-        # 2. Get all distinct session counts per subject
+        # 1. Get all distinct session counts per subject name
         # Fetch all inactive sessions to count 'total classes held'
-        all_sessions = supabase.table("attendance_sessions").select("subject_id, session_id").eq("active", False).execute().data
+        all_sessions = supabase.table("attendance_sessions").select("subject, session_id").eq("active", False).execute().data
         
-        # Map: subject_id -> set(session_ids)
+        # Map: subject_name -> set(session_ids)
         subject_session_map = {}
         for s in all_sessions:
-            sub_id = s['subject_id']
-            if sub_id not in subject_session_map:
-                subject_session_map[sub_id] = set()
-            subject_session_map[sub_id].add(s['session_id'])
+            sub_name = s['subject']
+            if sub_name not in subject_session_map:
+                subject_session_map[sub_name] = set()
+            subject_session_map[sub_name].add(s['session_id'])
             
-        # 3. Get student attendance
-        my_records = supabase.table("attendance_records").select("session_id, subject_id").eq("sid", sid).execute().data
+        # 2. Get student attendance
+        my_records = supabase.table("attendance_records").select("session_id, subject").eq("sid", sid).execute().data
         
-        # Map: subject_id -> set(attended_session_ids)
+        # Map: subject_name -> set(attended_session_ids)
         my_attendance_map = {}
         for r in my_records:
             if r.get('status', 'present') == 'present':
-                sub_id = r['subject_id']
-                if sub_id not in my_attendance_map:
-                    my_attendance_map[sub_id] = set()
-                my_attendance_map[sub_id].add(r['session_id'])
+                sub_name = r['subject']
+                if sub_name not in my_attendance_map:
+                    my_attendance_map[sub_name] = set()
+                my_attendance_map[sub_name].add(r['session_id'])
             
-        # 4. Build Report
+        # 3. Build Report
         report = []
-        for sub in subjects:
-            sub_id = sub['subject_id']
+        # Use all subject names found in sessions as the base
+        all_subject_names = sorted(list(subject_session_map.keys()))
+        
+        for sub_name in all_subject_names:
+            total_sessions = len(subject_session_map.get(sub_name, []))
+            if total_sessions == 0: continue
             
-            # Total unique completed sessions for this subject
-            total_sessions = len(subject_session_map.get(sub_id, []))
-            if total_sessions == 0: total_sessions = 1 # Avoid div by zero
-            
-            # My attended sessions
-            attended_sessions = len(my_attendance_map.get(sub_id, []))
-            
+            attended_sessions = len(my_attendance_map.get(sub_name, []))
             percentage = (attended_sessions / total_sessions) * 100
             
             report.append({
-                'subject_name': sub['subject_name'],
-                'total_classes': total_sessions if total_sessions > 0 and sub_id in subject_session_map else 0, # Display 0 if really 0
+                'subject_name': sub_name,
+                'total_classes': total_sessions,
                 'attended': attended_sessions,
                 'percentage': round(percentage, 2)
             })
@@ -1136,32 +1000,32 @@ def export_student_report():
     # ... (Re-run logic, omitted for brevity but strictly speaking should duplicate logic or call helper)
     # Re-running logic for CSV:
     try:
-        subjects = supabase.table("subjects").select("*").execute().data
-        all_sessions = supabase.table("attendance_sessions").select("subject_id, session_id").eq("active", False).execute().data
+        all_sessions = supabase.table("attendance_sessions").select("subject, session_id").eq("active", False).execute().data
         subject_session_map = {}
         for s in all_sessions:
-            sub_id = s['subject_id']
-            if sub_id not in subject_session_map: subject_session_map[sub_id] = set()
-            subject_session_map[sub_id].add(s['session_id'])
-        my_records = supabase.table("attendance_records").select("session_id, subject_id").eq("sid", sid).execute().data
+            sub_name = s['subject']
+            if sub_name not in subject_session_map: subject_session_map[sub_name] = set()
+            subject_session_map[sub_name].add(s['session_id'])
+            
+        my_records = supabase.table("attendance_records").select("session_id, subject").eq("sid", sid).execute().data
         my_attendance_map = {}
         for r in my_records:
-            sub_id = r['subject_id']
-            if sub_id not in my_attendance_map: my_attendance_map[sub_id] = set()
-            my_attendance_map[sub_id].add(r['session_id'])
+            sub_name = r['subject']
+            if sub_name not in my_attendance_map: my_attendance_map[sub_name] = set()
+            my_attendance_map[sub_name].add(r['session_id'])
         
         output = io.StringIO()
         writer = csv.writer(output)
         writer.writerow(["Subject", "Total Classes", "Attended", "Percentage"])
         
-        for sub in subjects:
-            sub_id = sub['subject_id']
-            total = len(subject_session_map.get(sub_id, []))
-            attended = len(my_attendance_map.get(sub_id, []))
+        all_subject_names = sorted(list(subject_session_map.keys()))
+        for sub_name in all_subject_names:
+            total = len(subject_session_map.get(sub_name, []))
+            attended = len(my_attendance_map.get(sub_name, []))
             real_total = total if total > 0 else 1
             percentage = (attended / real_total) * 100
             
-            writer.writerow([sub['subject_name'], total, attended, f"{round(percentage, 2)}%"])
+            writer.writerow([sub_name, total, attended, f"{round(percentage, 2)}%"])
             
     except Exception as e:
         return f"Error: {e}"

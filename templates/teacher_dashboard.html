@@ -54,30 +54,47 @@
                     <form action="{{ url_for('teacher') }}" method="POST"
                         class="row justify-content-center g-3 align-items-center">
                         <input type="hidden" name="action" value="start">
-                        <div class="col-md-5">
-                            <select name="subject_id" class="form-select bg-dark text-light border-secondary" required
-                                style="cursor: pointer;">
-                                <option value="" selected disabled>Select Subject to Start</option>
-                                {% for subject in subjects %}
-                                <option value="{{ subject.subject_id }}">{{ subject.subject_name }} ({{
-                                    subject.class_name }} - {{ subject.department }} Sem {{ subject.semester }} Sec {{
-                                    subject.section }})</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <input type="date" name="session_date"
-                                class="form-control bg-dark text-light border-secondary" required value="{{ now_iso }}">
-                        </div>
-                        <div class="col-md-4">
-                            <input type="text" name="session_name"
-                                class="form-control bg-dark text-light border-secondary"
-                                placeholder="Session/Topic Name (Optional)">
-                        </div>
-                        <div class="col-12 mt-4">
-                            <button type="submit" class="btn btn-primary btn-lg px-5">
-                                <i class="fas fa-play me-2"></i>Start Class
-                            </button>
+                        <div class="row g-3 justify-content-center">
+                            <div class="col-md-3">
+                                <label class="form-label text-muted small d-block text-start">Subject Name</label>
+                                <input type="text" name="subject_name"
+                                    class="form-control bg-dark text-light border-secondary"
+                                    placeholder="e.g. Physics I" required>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label text-muted small d-block text-start">Department</label>
+                                <input type="text" name="department"
+                                    class="form-control bg-dark text-light border-secondary" placeholder="e.g. CSE"
+                                    required>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label text-muted small d-block text-start">Semester</label>
+                                <input type="text" name="semester"
+                                    class="form-control bg-dark text-light border-secondary" placeholder="e.g. 5"
+                                    required>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label text-muted small d-block text-start">Section</label>
+                                <input type="text" name="section"
+                                    class="form-control bg-dark text-light border-secondary" placeholder="e.g. B"
+                                    required>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label text-muted small d-block text-start">Date</label>
+                                <input type="date" name="session_date"
+                                    class="form-control bg-dark text-light border-secondary" required
+                                    value="{{ now_iso }}">
+                            </div>
+                            <div class="col-md-9 mt-3">
+                                <input type="text" name="session_name"
+                                    class="form-control bg-dark text-light border-secondary"
+                                    placeholder="Optional Topic (e.g. Quantum Mechanics Intro)">
+                            </div>
+                            <div class="col-md-3 mt-3">
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="fas fa-play me-2"></i>Start Class
+                                </button>
+                            </div>
                         </div>
                     </form>
                 </div>
