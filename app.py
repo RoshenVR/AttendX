@@ -784,7 +784,7 @@ def attendance_view():
                           attendance=records, 
                           summary=summary_list,
                           subjects=subjects,
-                          selected_subject=subject_id,
+                          selected_subject=subject_filter,
                           from_date=from_date,
                           to_date=to_date,
                           search=search,
