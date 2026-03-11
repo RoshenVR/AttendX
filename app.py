@@ -678,6 +678,130 @@ def view_attendance():
     return render_template("attendance.html", attendance=records, total=len(records), 
                           subjects=subjects, selected_subject=subject_filter)
 
+# ---------------- TEACHER SESSION HISTORY & EDITING ----------------
+@app.route("/teacher/sessions")
+def teacher_sessions():
+    if not login_required('teacher'):
+        return redirect(url_for('login'))
+    
+    if not supabase: return "DB Error", 500
+    
+    teacher_id = session.get('user')
+    try:
+        # Fetch all sessions created by this teacher
+        sessions_resp = supabase.table("attendance_sessions").select("*").eq("teacher_id", teacher_id).order("session_id", desc=True).execute()
+        sessions = sessions_resp.data if sessions_resp.data else []
+    except Exception as e:
+        print(f"Teacher Sessions Error: {e}")
+        sessions = []
+        
+    return render_template("teacher_sessions.html", sessions=sessions)
+
+@app.route("/teacher/sessions/<int:session_id>")
+def edit_session(session_id):
+    if not login_required('teacher'):
+        return redirect(url_for('login'))
+    
+    if not supabase: return "DB Error", 500
+    
+    try:
+        # Fetch session details
+        sess_resp = supabase.table("attendance_sessions").select("*").eq("session_id", session_id).execute()
+        sess = sess_resp.data[0] if sess_resp.data else None
+        
+        if not sess:
+            flash("Session not found.", "error")
+            return redirect(url_for('teacher_sessions'))
+            
+        # Fetch students that *should* have been in this session
+        dept = sess.get('department')
+        sem = sess.get('semester')
+        sec = sess.get('section')
+        
+        query = supabase.table("users").select("sid, name").eq("role", "student")
+        if dept and dept.strip(): query = query.ilike("department", f"{dept.strip()}")
+        if sem and sem.strip(): query = query.ilike("semester", f"{sem.strip()}")
+        if sec and sec.strip(): query = query.ilike("section", f"{sec.strip()}")
+        
+        enrolled = query.execute().data if query.execute().data else []
+        
+        # Fetch existing records for this session
+        records_resp = supabase.table("attendance_records").select("sid, status").eq("session_id", session_id).execute()
+        record_map = {str(r['sid']): r['status'] for r in records_resp.data} if records_resp.data else {}
+        
+        # Merge status into enrolled students
+        student_list = []
+        for s in enrolled:
+            sid_str = str(s['sid'])
+            student_list.append({
+                'sid': sid_str,
+                'name': s['name'],
+                'status': record_map.get(sid_str, 'absent') # Default to absent if no record
+            })
+            
+    except Exception as e:
+        print(f"Edit Session Error: {e}")
+        flash("An error occurred while loading the session.", "error")
+        return redirect(url_for('teacher_sessions'))
+        
+    return render_template("edit_session.html", session_info=sess, students=student_list)
+
+@app.route("/teacher/update_record", methods=["POST"])
+def update_attendance_record():
+    if not login_required('teacher'):
+        return json.dumps({'success': False, 'message': 'Unauthorized'}), 401
+        
+    if not supabase: return json.dumps({'success': False, 'message': 'DB Error'}), 500
+    
+    data = request.get_json()
+    sess_id = data.get('session_id')
+    sid = data.get('sid')
+    status = data.get('status')
+    
+    if not sess_id or not sid or not status:
+        return json.dumps({'success': False, 'message': 'Missing data'}), 400
+        
+    teacher_id = session.get('user')
+    
+    try:
+        # Fetch session to get info (subject, date)
+        sess_resp = supabase.table("attendance_sessions").select("*").eq("session_id", sess_id).execute()
+        sess = sess_resp.data[0] if sess_resp.data else None
+        if not sess: return json.dumps({'success': False, 'message': 'Session not found'}), 404
+        
+        # Check if record exists
+        exist_resp = supabase.table("attendance_records").select("record_id").eq("session_id", sess_id).eq("sid", sid).execute()
+        
+        if exist_resp.data:
+            # Update
+            supabase.table("attendance_records").update({
+                "status": status,
+                "marked_type": "manual",
+                "marked_by": teacher_id
+            }).eq("session_id", sess_id).eq("sid", sid).execute()
+        else:
+            # Insert
+            # We need student name
+            user_resp = supabase.table("users").select("name").eq("sid", sid).execute()
+            name = user_resp.data[0]['name'] if user_resp.data else 'Unknown'
+            
+            supabase.table("attendance_records").insert({
+                "session_id": sess_id,
+                "sid": sid,
+                "name": name,
+                "subject": sess['subject'],
+                "date": sess.get('session_date', datetime.now().strftime("%d-%m-%Y")),
+                "time": datetime.now().strftime("%H:%M:%S"),
+                "status": status,
+                "marked_type": "manual",
+                "marked_by": teacher_id
+            }).execute()
+            
+        return json.dumps({'success': True})
+    except Exception as e:
+        print(f"Update Record Error: {e}")
+        return json.dumps({'success': False, 'message': str(e)}), 500
+
 # ---------------- PROFESSIONAL ATTENDANCE VIEW ----------------
 @app.route("/attendance/view")
 def attendance_view():
@@ -695,24 +819,35 @@ def attendance_view():
     to_date = request.args.get('to_date', '')
     search = request.args.get('search', '').strip()
     
+    # New filters
+    dept_filter = request.args.get('department', '')
+    sem_filter = request.args.get('semester', '')
+    sec_filter = request.args.get('section', '')
+    
     try:
-        # Get unique subjects for filter dropdown
+        # Get unique values for filter dropdowns
         if role == 'student':
             subjects = []
+            departments = []
+            semesters = []
+            sections = []
         else:
             # Fetch unique subject names from records
             subj_resp = supabase.table("attendance_records").select("subject").execute()
-            subjects = list(set(r['subject'] for r in subj_resp.data if r.get('subject')))
-            subjects.sort()
+            subjects = sorted(list(set(r['subject'] for r in subj_resp.data if r.get('subject'))))
+            
+            # Fetch unique filter values from users (students)
+            user_meta_resp = supabase.table("users").select("department, semester, section").eq("role", "student").execute()
+            departments = sorted(list(set(u['department'] for u in user_meta_resp.data if u.get('department'))))
+            semesters = sorted(list(set(u['semester'] for u in user_meta_resp.data if u.get('semester'))))
+            sections = sorted(list(set(u['section'] for u in user_meta_resp.data if u.get('section'))))
         
-        # Build query with role-based filtering
+        # Build query for records
         query = supabase.table("attendance_records").select("*")
         
-        # Role-based data restriction
         if role == 'student':
             query = query.eq("sid", user_id)
         
-        # Apply filters
         if subject_filter:
             query = query.eq("subject", subject_filter)
         
@@ -723,20 +858,35 @@ def attendance_view():
             query = query.lte("date", to_date)
         
         if search and role != 'student':
-            # Search by name (case-insensitive partial match)
             query = query.ilike("name", f"%{search}%")
         
-        # Execute query
+        # Get all records first
         records = query.order("date", desc=True).order("time", desc=True).execute().data
         
-        # Calculate attendance summary per student
-        student_summary = {}
+        # To filter by department/semester/section, we need student metadata
+        # If any of these filters are active, we'll need to fetch relevant students
+        student_metadata = {}
+        if role != 'student':
+            # Always fetch student metadata for summary/filtering if not a student viewing own
+            student_query = supabase.table("users").select("sid, department, semester, section").eq("role", "student")
+            
+            if dept_filter: student_query = student_query.eq("department", dept_filter)
+            if sem_filter: student_query = student_query.eq("semester", sem_filter)
+            if sec_filter: student_query = student_query.eq("section", sec_filter)
+            
+            students_data = student_query.execute().data
+            student_metadata = {s['sid']: s for s in students_data}
+            
+            # If any student filter is active, further filter the records list
+            if dept_filter or sem_filter or sec_filter:
+                valid_sids = set(student_metadata.keys())
+                records = [r for r in records if str(r['sid']) in valid_sids]
         
+        # Calculate attendance summary per student-subject
+        student_summary = {}
         for record in records:
             sid = record['sid']
             subject_name = record.get('subject', 'N/A')
-            
-            # Create unique key for student-subject combination
             key = f"{sid}_{subject_name}"
             
             if key not in student_summary:
@@ -754,37 +904,38 @@ def attendance_view():
             if record.get('status', 'present') == 'present':
                 student_summary[key]['present'] += 1
         
-        # Calculate percentages and badge classes
+        # Calculate percentages
         for key in student_summary:
             summary = student_summary[key]
             if summary['total'] > 0:
                 summary['percentage'] = round((summary['present'] / summary['total']) * 100, 2)
-                
-                # Assign badge class
-                if summary['percentage'] >= 75:
-                    summary['badge_class'] = 'badge-green'
-                elif summary['percentage'] >= 60:
-                    summary['badge_class'] = 'badge-yellow'
-                else:
-                    summary['badge_class'] = 'badge-red'
+                if summary['percentage'] >= 75: summary['badge_class'] = 'badge-green'
+                elif summary['percentage'] >= 60: summary['badge_class'] = 'badge-yellow'
+                else: summary['badge_class'] = 'badge-red'
         
-        # Convert to list for template
-        summary_list = list(student_summary.values())
-        
-        # Sort by name
-        summary_list.sort(key=lambda x: x['name'])
+        summary_list = sorted(list(student_summary.values()), key=lambda x: x['name'])
         
     except Exception as e:
         print(f"Attendance View Error: {e}")
         records = []
         subjects = []
+        departments = []
+        semesters = []
+        sections = []
         summary_list = []
+        dept_filter = sem_filter = sec_filter = ''
     
     return render_template("attendance_view.html", 
                           attendance=records, 
                           summary=summary_list,
                           subjects=subjects,
+                          departments=departments,
+                          semesters=semesters,
+                          sections=sections,
                           selected_subject=subject_filter,
+                          dept_filter=dept_filter,
+                          sem_filter=sem_filter,
+                          sec_filter=sec_filter,
                           from_date=from_date,
                           to_date=to_date,
                           search=search,

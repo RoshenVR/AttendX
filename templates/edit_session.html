@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row mb-5">
+    <div class="col-md-12">
+        <div class="d-flex align-items-center mb-4">
+            <a href="{{ url_for('teacher_sessions') }}" class="btn btn-outline-secondary rounded-circle me-3"
+                style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div>
+                <h2 class="mb-0 fw-bold header-highlight">Edit Session Attendance</h2>
+                <p class="text-muted mb-0">Session #{{ session_info.session_id }} - {{ session_info.subject }} ({{
+                    session_info.session_date }})</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-white border-bottom-0 py-3 d-flex justify-content-between align-items-center">
+        <h5 class="text-uppercase text-muted small fw-bold ls-1 mb-0">Students</h5>
+        <div class="text-muted small">
+            Manual edits are saved instantly.
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4">Student Name</th>
+                        <th>Student ID</th>
+                        <th class="text-center">Status</th>
+                        <th class="pe-4 text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for student in students %}
+                    <tr id="row-{{ student.sid }}">
+                        <td class="ps-4 fw-bold">{{ student.name }}</td>
+                        <td>{{ student.sid }}</td>
+                        <td class="text-center">
+                            <span id="status-badge-{{ student.sid }}"
+                                class="badge rounded-pill px-3 py-2 {% if student.status == 'present' %}bg-success{% else %}bg-danger{% endif %} text-uppercase"
+                                style="font-size: 0.75rem;">
+                                {{ student.status }}
+                            </span>
+                        </td>
+                        <td class="pe-4 text-end">
+                            <button onclick="toggleAttendance('{{ student.sid }}')"
+                                class="btn btn-sm {% if student.status == 'present' %}btn-outline-danger{% else %}btn-outline-success{% endif %} rounded-pill px-3"
+                                id="btn-{{ student.sid }}">
+                                Mark {% if student.status == 'present' %}Absent{% else %}Present{% endif %}
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    function toggleAttendance(sid) {
+        const badge = document.getElementById(`status-badge-${sid}`);
+        const button = document.getElementById(`btn-${sid}`);
+        const currentStatus = badge.innerText.toLowerCase().trim();
+        const newStatus = currentStatus === 'present' ? 'absent' : 'present';
+
+        // Disable button during request
+        button.disabled = true;
+        button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+
+        fetch('{{ url_for("update_attendance_record") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                session_id: {{ session_info.session_id }},
+            sid: sid,
+            status: newStatus
+        })
+    })
+    .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update UI
+                if (newStatus === 'present') {
+                    badge.className = 'badge rounded-pill px-3 py-2 bg-success text-uppercase';
+                    badge.innerText = 'PRESENT';
+                    button.className = 'btn btn-sm btn-outline-danger rounded-pill px-3';
+                    button.innerText = 'Mark Absent';
+                } else {
+                    badge.className = 'badge rounded-pill px-3 py-2 bg-danger text-uppercase';
+                    badge.innerText = 'ABSENT';
+                    button.className = 'btn btn-sm btn-outline-success rounded-pill px-3';
+                    button.innerText = 'Mark Present';
+                }
+            } else {
+                alert('Error updating record: ' + (data.message || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An unexpected error occurred.');
+        })
+        .finally(() => {
+            button.disabled = false;
+        });
+}
+</script>
+
+<style>
+    .header-highlight {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+</style>
+{% endblock %}

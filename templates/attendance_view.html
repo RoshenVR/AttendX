@@ -39,6 +39,45 @@
                         {% endfor %}
                     </select>
                 </div>
+
+                <!-- Department Filter -->
+                <div class="col-md-3">
+                    <label class="form-label text-muted small">Department</label>
+                    <select name="department" class="form-select bg-dark text-light border-secondary">
+                        <option value="">All Departments</option>
+                        {% for dept in departments %}
+                        <option value="{{ dept }}" {% if dept_filter==dept %}selected{% endif %}>
+                            {{ dept }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Semester Filter -->
+                <div class="col-md-3">
+                    <label class="form-label text-muted small">Semester</label>
+                    <select name="semester" class="form-select bg-dark text-light border-secondary">
+                        <option value="">All Semesters</option>
+                        {% for sem in semesters %}
+                        <option value="{{ sem }}" {% if sem_filter==sem %}selected{% endif %}>
+                            {{ sem }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Section Filter -->
+                <div class="col-md-3">
+                    <label class="form-label text-muted small">Section</label>
+                    <select name="section" class="form-select bg-dark text-light border-secondary">
+                        <option value="">All Sections</option>
+                        {% for sec in sections %}
+                        <option value="{{ sec }}" {% if sec_filter==sec %}selected{% endif %}>
+                            {{ sec }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
                 {% endif %}
 
                 <!-- Date Range -->
@@ -64,7 +103,7 @@
                 {% endif %}
 
                 <!-- Apply Button -->
-                <div class="col-md-{% if role == 'student' %}4{% else %}12{% endif %} d-flex align-items-end">
+                <div class="col-md-{% if role == 'student' %}4{% else %}3{% endif %} d-flex align-items-end">
                     <button type="submit" class="btn btn-primary w-100">
                         <i class="fas fa-search me-2"></i>Apply Filters
                     </button>
