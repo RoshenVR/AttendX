@@ -317,13 +317,18 @@ def delete_user(sid):
     if not supabase: return "DB Error", 500
 
     try:
-        # Delete dependent records first to avoid foreign key constraints
+        # Delete dependent attendance records first to avoid foreign key constraints
         supabase.table("attendance_records").delete().eq("sid", sid).execute()
         
-        # If the user is a teacher, handle their sessions (optional: set to NULL or delete)
-        # For now, we focusing on students as per the screenshot, but handling both is safer.
-        supabase.table("attendance_sessions").delete().eq("teacher_id", sid).execute()
-        supabase.table("subjects").delete().eq("added_by", sid).execute()
+        # Clean up teacher-specific tables (safe to skip if tables don't exist)
+        try:
+            supabase.table("attendance_sessions").delete().eq("teacher_id", sid).execute()
+        except Exception:
+            pass
+        try:
+            supabase.table("subjects").delete().eq("added_by", sid).execute()
+        except Exception:
+            pass
 
         supabase.table("users").delete().eq("sid", sid).execute()
         flash(f"User {sid} and their records deleted.", "success")
