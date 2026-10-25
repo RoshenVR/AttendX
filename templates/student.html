@@ -1,30 +1,39 @@
 {% extends "base.html" %}
 
+{% block title %}Confirm Attendance - AttendX{% endblock %}
+
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6 text-center">
-        <div class="card border-0 shadow-lg bg-dark-subtle animate-pulse">
-            <div class="card-body p-5">
-                <div class="mb-4">
-                    <div class="icon-square bg-success text-white rounded-circle p-4 d-inline-block shadow-lg"
-                        style="width: 100px; height: 100px; display: flex; align-items: center; justify-content: center;">
-                        <i class="fas fa-check fa-3x"></i>
-                    </div>
-                </div>
+<div style="display: flex; align-items: center; justify-content: center; min-height: 75vh; padding: 20px 0;">
+    <div class="ax-card" style="width: 100%; max-width: 480px; padding: 42px 36px; text-align: center; box-shadow: var(--shadow-lg);">
+        <div style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(6, 182, 212, 0.15)); border: 2px solid rgba(16, 185, 129, 0.3); display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto; color: #10b981;">
+            <i data-lucide="check-circle" style="width: 44px; height: 44px;"></i>
+        </div>
 
-                <h2 class="fw-bold mb-2">Attendance Confirmed!</h2>
-                <p class="text-muted mb-4">You are marking attendance for:</p>
+        <h1 style="font-size: 22px; font-weight: 800; color: #102a67; margin-bottom: 6px;">Token Verified</h1>
+        <p style="color: #64748b; font-size: 13.5px; margin-bottom: 24px;">Confirm check-in submission for today's lecture</p>
 
-                <h1 class="display-4 fw-bold text-gradient mb-4">{{ subject }}</h1>
-
-                <form method="post">
-                    <input type="hidden" name="token" value="{{ token }}">
-                    <button type="submit" class="btn btn-primary btn-lg px-5 py-3 rounded-pill shadow-lg hover-lift">
-                        <i class="fas fa-check-circle me-2"></i>Confirm & Submit
-                    </button>
-                </form>
+        <div style="background: #f8fafc; border: 1px solid #e2eaf5; border-radius: 14px; padding: 20px; margin-bottom: 28px;">
+            <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #64748b; display: block; margin-bottom: 4px;">Subject Offerings</span>
+            <div style="font-size: 26px; font-weight: 800; background: linear-gradient(135deg, #7c3aed, #2563eb); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                {{ subject }}
+            </div>
+            <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 10px; font-size: 12.5px; color: #64748b;">
+                <i data-lucide="shield-check" style="width: 15px; height: 15px; color: #10b981;"></i>
+                <span>Dynamic anti-proxy session validation</span>
             </div>
         </div>
+
+        <form method="post">
+            <input type="hidden" name="token" value="{{ token }}">
+            <button type="submit" class="btn-scan-qr" style="width: 100%; border-radius: 12px; padding: 14px; font-size: 15px;">
+                <span>Confirm & Record Attendance</span>
+                <i data-lucide="arrow-right" style="width: 18px; height: 18px;"></i>
+            </button>
+        </form>
+
+        <a href="{{ url_for('student_dashboard') }}" style="display: inline-block; margin-top: 20px; color: #64748b; font-size: 13px; font-weight: 600; text-decoration: none;">
+            Cancel and return to dashboard
+        </a>
     </div>
 </div>
 {% endblock %}

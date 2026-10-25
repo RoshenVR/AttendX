@@ -1,186 +1,360 @@
 {% extends "base.html" %}
 
+{% block title %}Institution Overview - AttendX Admin{% endblock %}
+
 {% block content %}
-<div class="row align-items-center mb-5">
-    <div class="col-md-6">
-        <h2 class="display-6 fw-bold mb-0">Admin Dashboard</h2>
-        <p class="text-muted mb-0">System Overview & Management</p>
+<!-- Page Header -->
+<div class="page-header-row" style="margin-bottom: 24px;">
+    <div>
+        <h1 class="page-title" style="font-size: 28px; font-weight: 800; color: #102a67;">Institution Overview</h1>
+        <p class="page-subtitle" style="font-size: 13.5px; color: #64748b;">Complete view of attendance and academic health</p>
     </div>
-    <div class="col-md-6 text-md-end">
-        <span class="badge bg-primary fs-6">{{ now }}</span>
-    </div>
-</div>
-
-<!-- Stats Row -->
-<div class="row g-4 mb-5">
-    <div class="col-md-6 col-lg-3">
-        <div class="card h-100 border-0 bg-dark-subtle">
-            <div class="card-body d-flex align-items-center">
-                <div class="icon-square bg-primary text-white rounded-3 fs-1 p-3 me-3">
-                    <i class="fas fa-chalkboard-teacher"></i>
-                </div>
-                <div>
-                    <h3 class="fw-bold mb-0">{{ total_teachers }}</h3>
-                    <p class="text-muted mb-0">Teachers</p>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-6 col-lg-3">
-        <div class="card h-100 border-0 bg-dark-subtle">
-            <div class="card-body d-flex align-items-center">
-                <div class="icon-square bg-success text-white rounded-3 fs-1 p-3 me-3">
-                    <i class="fas fa-user-graduate"></i>
-                </div>
-                <div>
-                    <h3 class="fw-bold mb-0">{{ total_students }}</h3>
-                    <p class="text-muted mb-0">Students</p>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-6 col-lg-3">
-        <div class="card h-100 border-0 bg-dark-subtle">
-            <div class="card-body d-flex align-items-center">
-                <div class="icon-square bg-warning text-dark rounded-3 fs-1 p-3 me-3">
-                    <i class="fas fa-clock"></i>
-                </div>
-                <div>
-                    <h3 class="fw-bold mb-0">{{ active_sessions }}</h3>
-                    <p class="text-muted mb-0">Active Sessions</p>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-6 col-lg-3">
-        <div class="card h-100 border-0 bg-dark-subtle">
-            <div class="card-body d-flex align-items-center">
-                <div class="icon-square bg-danger text-white rounded-3 fs-1 p-3 me-3">
-                    <i class="fas fa-history"></i>
-                </div>
-                <div>
-                    <h3 class="fw-bold mb-0">{{ total_sessions }}</h3>
-                    <p class="text-muted mb-0">Total Sessions</p>
-                </div>
-            </div>
-        </div>
+    <div style="font-size: 13px; font-weight: 600; color: #64748b;">
+        {{ now }}
     </div>
 </div>
 
-<!-- Pending Approvals -->
+<!-- 4 Top Metric Cards (Total Students, Faculty, Today's Attendance, Tagged Shortages) -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin-bottom: 24px;">
+    <!-- 1. Total Students -->
+    <div class="stat-metric-card">
+        <div class="stat-metric-top">
+            <div class="stat-icon-wrapper stat-icon-blue">
+                <i data-lucide="users" style="width: 18px; height: 18px;"></i>
+            </div>
+            <span class="stat-metric-label">Total Students</span>
+        </div>
+        <div>
+            <div class="stat-metric-value">{{ total_students }}</div>
+            <div class="stat-metric-trend trend-up">
+                <i data-lucide="trending-up" style="width: 13px; height: 13px;"></i>
+                <span>Enrolled learners</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Faculty / Teachers -->
+    <div class="stat-metric-card">
+        <div class="stat-metric-top">
+            <div class="stat-icon-wrapper stat-icon-purple">
+                <i data-lucide="graduation-cap" style="width: 18px; height: 18px;"></i>
+            </div>
+            <span class="stat-metric-label">Faculty</span>
+        </div>
+        <div>
+            <div class="stat-metric-value">{{ total_teachers }}</div>
+            <div class="stat-metric-trend trend-up">
+                <i data-lucide="check" style="width: 13px; height: 13px;"></i>
+                <span>Active educators</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Today's Attendance -->
+    <div class="stat-metric-card">
+        <div class="stat-metric-top">
+            <div class="stat-icon-wrapper stat-icon-green">
+                <i data-lucide="clipboard-check" style="width: 18px; height: 18px;"></i>
+            </div>
+            <span class="stat-metric-label">Today's Attendance</span>
+        </div>
+        <div>
+            <div class="stat-metric-value">{{ today_attendance_pct }}%</div>
+            <div class="stat-metric-trend trend-up">
+                <i data-lucide="trending-up" style="width: 13px; height: 13px;"></i>
+                <span>Campus present rate</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. Tagged Shortages -->
+    <div class="stat-metric-card">
+        <div class="stat-metric-top">
+            <div class="stat-icon-wrapper stat-icon-red">
+                <i data-lucide="triangle-alert" style="width: 18px; height: 18px;"></i>
+            </div>
+            <span class="stat-metric-label">Tagged Shortages</span>
+        </div>
+        <div>
+            <div class="stat-metric-value" style="color: #ef4444;">{{ shortage_count }}</div>
+            <div class="stat-metric-trend trend-down">
+                <i data-lucide="alert-circle" style="width: 13px; height: 13px;"></i>
+                <span>Below 75% threshold</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Pending Approvals Alert Banner (If Any) -->
 {% if pending_students %}
-<div class="row mb-5">
-    <div class="col-12">
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-warning bg-opacity-10 border-0 py-3">
-                <h5 class="fw-bold mb-0 text-warning-emphasis">
-                    <i class="fas fa-user-clock me-2"></i>Pending Student Approvals
-                </h5>
+<div class="ax-card" style="background: #fffbeb; border: 1px solid #fde68a; margin-bottom: 24px; padding: 18px 22px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <i data-lucide="clock" style="width: 20px; height: 20px; color: #d97706;"></i>
+            <span style="font-size: 15px; font-weight: 700; color: #92400e;">Pending Student Registrations ({{ pending_students|length }})</span>
+        </div>
+        <a href="{{ url_for('admin_users') }}" style="font-size: 12.5px; font-weight: 700; color: #b45309; text-decoration: none;">Review in Users &rarr;</a>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+        {% for student in pending_students[:3] %}
+        <div style="display: flex; align-items: center; justify-content: space-between; background: #ffffff; padding: 8px 14px; border-radius: 8px; border: 1px solid #fef3c7;">
+            <div style="font-size: 13px; font-weight: 600; color: #102a67;">
+                {{ student.name }} <span style="font-size: 12px; color: #64748b; font-weight: 500;">({{ student.sid }})</span>
             </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="bg-light">
-                            <tr>
-                                <th class="ps-4">Name</th>
-                                <th>Student ID</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for student in pending_students %}
-                            <tr>
-                                <td class="ps-4 fw-bold">{{ student.name }}</td>
-                                <td>{{ student.sid }}</td>
-                                <td>
-                                    <div class="d-flex gap-2">
-                                        <a href="{{ url_for('approve_user', sid=student.sid) }}"
-                                            class="btn btn-sm btn-success">
-                                            <i class="fas fa-check me-1"></i>Approve
-                                        </a>
-                                        <a href="{{ url_for('reject_user', sid=student.sid) }}"
-                                            class="btn btn-sm btn-danger">
-                                            <i class="fas fa-times me-1"></i>Reject
-                                        </a>
-                                    </div>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
+            <div style="display: flex; gap: 6px;">
+                <a href="{{ url_for('approve_user', sid=student.sid) }}" class="btn-ax-secondary" style="background: #dcfce7; color: #15803d; border-color: #bbf7d0; padding: 4px 12px; font-size: 11.5px;">Approve</a>
+                <a href="{{ url_for('reject_user', sid=student.sid) }}" class="btn-ax-secondary" style="background: #fee2e2; color: #b91c1c; border-color: #fecaca; padding: 4px 12px; font-size: 11.5px;">Reject</a>
             </div>
         </div>
+        {% endfor %}
     </div>
 </div>
 {% endif %}
 
-<!-- Quick Actions -->
-<div class="row g-4">
-    <div class="col-md-6">
-        <div class="card h-100 border-0 shadow-sm">
-            <div class="card-header bg-transparent border-0 pb-0">
-                <h5 class="fw-bold"><i class="fas fa-plus-circle me-2 text-primary"></i>Add New Teacher</h5>
+<!-- Institution Attendance Trend Chart Card -->
+<div class="ax-card" style="margin-bottom: 24px; padding: 24px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+        <div style="font-size: 16px; font-weight: 800; color: #102a67;">Attendance Trend</div>
+        <!-- Chart Custom Legend -->
+        <div style="display: flex; align-items: center; gap: 20px; font-size: 12.5px; font-weight: 600;">
+            <div style="display: flex; align-items: center; gap: 6px; color: #4338ca;">
+                <span style="width: 14px; height: 3px; background: #7c3aed; border-radius: 2px;"></span>
+                <span>Overall</span>
             </div>
-            <div class="card-body">
-                <form action="{{ url_for('add_teacher') }}" method="POST">
-                    <div class="mb-3">
-                        <label class="form-label">Full Name</label>
-                        <input type="text" name="name" class="form-control bg-dark text-light border-secondary"
-                            placeholder="Prof. John Doe" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Teacher ID</label>
-                        <input type="text" name="sid" class="form-control bg-dark text-light border-secondary"
-                            placeholder="T-1001" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Password</label>
-                        <input type="password" name="password" class="form-control bg-dark text-light border-secondary"
-                            placeholder="********" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary w-100">
-                        <i class="fas fa-save me-2"></i>Create Account
-                    </button>
-                </form>
+            <div style="display: flex; align-items: center; gap: 6px; color: #0284c7;">
+                <span style="width: 14px; height: 0; border-top: 2px dashed #06b6d4;"></span>
+                <span>Target</span>
             </div>
         </div>
     </div>
+    <div style="height: 240px; position: relative;">
+        <canvas id="adminTrendChart"></canvas>
+    </div>
+</div>
 
-    <div class="col-md-6">
-        <div class="card h-100 border-0 shadow-sm">
-            <div class="card-header bg-transparent border-0 pb-0">
-                <h5 class="fw-bold"><i class="fas fa-cogs me-2 text-primary"></i>Quick Management</h5>
+<!-- Department & Class Filters Bar -->
+<div class="ax-card" style="margin-bottom: 24px; padding: 18px 22px;">
+    <form method="GET" action="{{ url_for('admin_dashboard') }}" style="display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap;">
+        <!-- Department Filter -->
+        <div style="flex: 1; min-width: 200px;">
+            <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 6px;">Department</label>
+            <select name="department" class="ax-select">
+                <option value="">All Departments</option>
+                {% for dept in departments %}
+                <option value="{{ dept }}" {% if selected_dept == dept %}selected{% endif %}>{{ dept }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Class Filter -->
+        <div style="flex: 1; min-width: 200px;">
+            <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 6px;">Class</label>
+            <select name="class" class="ax-select">
+                <option value="">All Classes</option>
+                {% for cls in classes %}
+                <option value="{{ cls }}" {% if selected_class == cls %}selected{% endif %}>{{ cls }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Apply Button -->
+        <div>
+            <button type="submit" class="btn-export-gradient" style="padding: 10px 24px; height: 42px;">
+                <span>Apply</span>
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Shortage Risk Students Table Card -->
+<div class="ax-card" style="margin-bottom: 24px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="users" style="width: 18px; height: 18px; color: #ef4444;"></i>
+            <span style="font-size: 15px; font-weight: 700; color: #102a67;">Shortage Risk Students</span>
+        </div>
+        <a href="{{ url_for('attendance_view') }}" style="font-size: 12.5px; font-weight: 700; color: #2563eb; text-decoration: none; display: flex; align-items: center; gap: 4px;">
+            <span>View All</span>
+            <i data-lucide="arrow-right" style="width: 13px; height: 13px;"></i>
+        </a>
+    </div>
+
+    <div class="ax-table-wrapper">
+        <table class="ax-table">
+            <thead>
+                <tr>
+                    <th style="width: 45px;">#</th>
+                    <th>Name</th>
+                    <th>Roll No</th>
+                    <th>Dept</th>
+                    <th style="text-align: right;">Attendance</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in shortage_students[:8] %}
+                <tr>
+                    <td style="color: #64748b; font-weight: 600;">{{ loop.index }}</td>
+                    <td style="color: #102a67; font-weight: 700;">{{ s['name'] }}</td>
+                    <td style="color: #64748b; font-weight: 600;">{{ s['sid'] }}</td>
+                    <td style="color: #64748b; font-size: 12.5px;">{{ s['department'] }}</td>
+                    <td style="text-align: right;">
+                        <span class="badge-status danger" style="font-size: 12px; font-weight: 800; padding: 4px 10px;">
+                            {{ s['percentage'] }}%
+                        </span>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" style="text-align: center; padding: 32px; color: #10b981; font-weight: 600;">
+                        <i data-lucide="circle-check" style="width: 28px; height: 28px; margin-bottom: 6px; display: inline-block;"></i>
+                        <div>No students currently in shortage risk! All attendance above 75%.</div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Bottom Row: Export Report Gradient Action & Notifications -->
+<div style="display: grid; grid-template-columns: 1.2fr 1.8fr; gap: 18px; margin-bottom: 24px;">
+    <!-- Export Report Button Container -->
+    <div class="ax-card" style="display: flex; flex-direction: column; justify-content: center; align-items: flex-start; padding: 24px;">
+        <h3 style="font-size: 16px; font-weight: 700; color: #102a67; margin-bottom: 8px;">Institution Records</h3>
+        <p style="font-size: 13px; color: #64748b; margin-bottom: 18px;">
+            Generate and export the complete campus-wide attendance log.
+        </p>
+        <a href="{{ url_for('admin_reports') }}" class="btn-export-gradient" style="width: 100%;">
+            <i data-lucide="download" style="width: 18px; height: 18px;"></i>
+            <span>Export Report</span>
+        </a>
+    </div>
+
+    <!-- Notifications Card -->
+    <div class="ax-card">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="bell" style="width: 17px; height: 17px; color: #2563eb;"></i>
+                <span style="font-size: 14.5px; font-weight: 700; color: #102a67;">Notifications</span>
             </div>
-            <div class="card-body d-flex flex-column gap-3">
-                <a href="{{ url_for('admin_users') }}"
-                    class="btn btn-dark d-flex justify-content-between align-items-center p-3 border border-secondary">
-                    <span class="text-start">
-                        <div class="fw-bold">Manage Users</div>
-                        <small class="text-muted">View, edit, or delete users</small>
-                    </span>
-                    <i class="fas fa-chevron-right text-muted"></i>
-                </a>
+            <a href="{{ url_for('admin_users') }}" style="font-size: 12px; font-weight: 700; color: #2563eb; text-decoration: none;">View All &rarr;</a>
+        </div>
 
-                <a href="{{ url_for('admin_reports') }}"
-                    class="btn btn-dark d-flex justify-content-between align-items-center p-3 border border-secondary">
-                    <span class="text-start">
-                        <div class="fw-bold">System Reports</div>
-                        <small class="text-muted">View all attendance records</small>
-                    </span>
-                    <i class="fas fa-chevron-right text-muted"></i>
-                </a>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; font-size: 12.5px;">
+                <div style="display: flex; align-items: center; gap: 8px; color: #102a67; font-weight: 600;">
+                    <span class="status-dot red"></span>
+                    <span>{{ shortage_count }} students below 75% attendance</span>
+                </div>
+                <span style="color: #8c9ba5; font-size: 11.5px;">Active</span>
+            </div>
 
-                <a href="{{ url_for('attendance_view') }}"
-                    class="btn btn-dark d-flex justify-content-between align-items-center p-3 border border-secondary">
-                    <span class="text-start">
-                        <div class="fw-bold">Attendance Analytics</div>
-                        <small class="text-muted">Advanced filtering & search</small>
-                    </span>
-                    <i class="fas fa-chevron-right text-muted"></i>
-                </a>
+            <div style="display: flex; align-items: center; justify-content: space-between; font-size: 12.5px;">
+                <div style="display: flex; align-items: center; gap: 8px; color: #102a67; font-weight: 600;">
+                    <span class="status-dot green"></span>
+                    <span>{{ active_sessions }} live attendance session(s) active</span>
+                </div>
+                <span style="color: #8c9ba5; font-size: 11.5px;">Live</span>
+            </div>
+
+            <div style="display: flex; align-items: center; justify-content: space-between; font-size: 12.5px;">
+                <div style="display: flex; align-items: center; gap: 8px; color: #102a67; font-weight: 600;">
+                    <span class="status-dot orange"></span>
+                    <span>{{ pending_students|length }} student account(s) pending approval</span>
+                </div>
+                <span style="color: #8c9ba5; font-size: 11.5px;">Pending</span>
+            </div>
+
+            <div style="display: flex; align-items: center; justify-content: space-between; font-size: 12.5px;">
+                <div style="display: flex; align-items: center; gap: 8px; color: #102a67; font-weight: 600;">
+                    <span class="status-dot green"></span>
+                    <span>Campus database synced with Supabase</span>
+                </div>
+                <span style="color: #8c9ba5; font-size: 11.5px;">Online</span>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('adminTrendChart');
+    if (ctx) {
+        const labels = {{ trend_months|tojson }};
+        const overallData = {{ trend_overall|tojson }};
+        const targetData = {{ trend_target|tojson }};
+
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Overall',
+                        data: overallData,
+                        borderColor: '#7c3aed',
+                        backgroundColor: 'rgba(124, 58, 237, 0.06)',
+                        borderWidth: 2.5,
+                        fill: true,
+                        tension: 0.35,
+                        pointBackgroundColor: '#7c3aed',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2,
+                        pointRadius: 4.5,
+                        pointHoverRadius: 6.5
+                    },
+                    {
+                        label: 'Target',
+                        data: targetData,
+                        borderColor: '#06b6d4',
+                        borderWidth: 2,
+                        borderDash: [5, 5],
+                        fill: false,
+                        tension: 0.35,
+                        pointBackgroundColor: '#06b6d4',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2,
+                        pointRadius: 3.5,
+                        pointHoverRadius: 5.5
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(c) {
+                                return c.dataset.label + ': ' + c.parsed.y + '%';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        min: 0,
+                        max: 100,
+                        ticks: {
+                            stepSize: 25,
+                            callback: function(v) { return v + '%'; },
+                            font: { size: 11 }
+                        },
+                        grid: {
+                            color: '#f1f5fa'
+                        }
+                    },
+                    x: {
+                        ticks: { font: { size: 11 } },
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
 {% endblock %}

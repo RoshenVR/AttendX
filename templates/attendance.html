@@ -1,79 +1,98 @@
 {% extends "base.html" %}
 
+{% block title %}Attendance Summary - AttendX{% endblock %}
+
 {% block content %}
-<div class="row mb-4">
-    <div class="col-md-12">
-        <div class="d-flex align-items-center mb-4">
-            <a href="{{ url_for('teacher_dashboard') }}" class="btn btn-outline-secondary rounded-circle me-3"
-                style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
-                <i class="fas fa-arrow-left"></i>
-            </a>
-            <h2 class="mb-0 fw-bold header-highlight">Attendance Summary</h2>
-            <div class="ms-auto d-flex gap-2">
-                <form method="get" class="d-flex align-items-center">
-                    <select name="subject_id" class="form-select bg-dark text-light border-secondary me-2"
-                        onchange="this.form.submit()">
-                        <option value="">All Subjects</option>
-                        {% for sub_name in subjects %}
-                        <option value="{{ sub_name }}" {% if selected_subject==sub_name %}selected{% endif %}>
-                            {{ sub_name }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </form>
-                <a href="{{ url_for('export') }}" class="btn btn-success shadow-sm rounded-pill px-4">
-                    <i class="fas fa-file-csv me-2"></i> Download CSV
-                </a>
-            </div>
-        </div>
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+    <div>
+        <h1 style="font-size: 24px; font-weight: 800; color: #102a67; margin: 0;">Attendance Records</h1>
+        <p style="font-size: 13.5px; color: #64748b; margin: 4px 0 0 0;">Teacher summary view for recorded session attendance</p>
+    </div>
+    <div style="display: flex; align-items: center; gap: 12px;">
+        <form method="get" style="margin: 0;">
+            <select name="subject_id" class="ax-select" onchange="this.form.submit()">
+                <option value="">All Subjects</option>
+                {% for sub_name in subjects %}
+                <option value="{{ sub_name }}" {% if selected_subject==sub_name %}selected{% endif %}>{{ sub_name }}</option>
+                {% endfor %}
+            </select>
+        </form>
+        <a href="{{ url_for('export') }}" class="btn-export-gradient" style="padding: 9px 16px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
+            <i data-lucide="download" style="width: 16px; height: 16px;"></i>
+            <span>Export CSV</span>
+        </a>
+        <a href="{{ url_for('teacher_dashboard') }}" class="btn-filter-apply" style="padding: 9px 16px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
+            <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
+            <span>Dashboard</span>
+        </a>
     </div>
 </div>
 
-<div class="card shadow-md border-0">
-    <div class="card-header bg-white border-bottom-0 py-3 d-flex justify-content-between align-items-center">
-        <h5 class="text-uppercase text-muted small fw-bold ls-1 mb-0">Records</h5>
-        <div class="bg-light px-3 py-1 rounded-pill">
-            <span class="text-muted small">Total Present:</span> <span class="fw-bold text-primary">{{ total }}</span>
+<div class="ax-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(37, 99, 235, 0.1); display: flex; align-items: center; justify-content: center; color: #2563eb;">
+                <i data-lucide="check-circle-2" style="width: 20px; height: 20px;"></i>
+            </div>
+            <div>
+                <h2 class="card-title" style="margin: 0; font-size: 16px;">Validated Check-in Records</h2>
+                <p style="margin: 0; font-size: 12px; color: #64748b;">Showing student attendance for selected subjects</p>
+            </div>
+        </div>
+        <div style="background: #f1f5fa; padding: 6px 14px; border-radius: var(--radius-pill); font-size: 13px; font-weight: 700; color: #102a67;">
+            Total Check-ins: <span style="color: #2563eb;">{{ total }}</span>
         </div>
     </div>
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="bg-light">
-                    <tr>
-                        <th scope="col" class="ps-4 py-3 text-muted small text-uppercase">Session ID</th>
-                        <th scope="col" class="py-3 text-muted small text-uppercase">Name</th>
-                        <th scope="col" class="py-3 text-muted small text-uppercase">ID</th>
-                        <th scope="col" class="py-3 text-muted small text-uppercase">Subject</th>
-                        <th scope="col" class="pe-4 py-3 text-muted small text-uppercase text-end">Date Time</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for a in attendance %}
-                    <tr>
-                        <td class="ps-4 text-muted small">#{{ a.session_id }}</td>
-                        <td class="fw-bold text-dark">{{ a.name }}</td>
-                        <td class="text-muted">{{ a.sid }}</td>
-                        <td><span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3">{{ a.subject
-                                }}</span></td>
-                        <td class="pe-4 text-end">
-                            <span class="fw-bold text-dark">{{ a.date }}</span>
-                            <small class="text-muted d-block">{{ a.time }}</small>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="5" class="text-center py-5">
-                            <div class="text-muted opacity-50 mb-3">
-                                <i class="fas fa-folder-open fa-3x"></i>
+
+    <div style="overflow-x: auto;">
+        <table class="ax-table">
+            <thead>
+                <tr>
+                    <th>Session ID</th>
+                    <th>Student Name</th>
+                    <th>Student ID</th>
+                    <th>Subject</th>
+                    <th style="text-align: right;">Date & Time</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in attendance %}
+                <tr>
+                    <td style="font-family: monospace; color: #64748b; font-size: 12px;">#{{ a.session_id }}</td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div style="width: 28px; height: 28px; border-radius: 50%; background: #e2eaf5; color: #102a67; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center;">
+                                {{ a.name[:2].upper() }}
                             </div>
-                            <p class="text-muted small fw-bold">No attendance records found yet.</p>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+                            <span style="font-weight: 700; color: #102a67;">{{ a.name }}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <span style="font-family: monospace; font-size: 12px; background: #f1f5fa; padding: 3px 8px; border-radius: 4px; color: #475569;">
+                            {{ a.sid }}
+                        </span>
+                    </td>
+                    <td>
+                        <span style="display: inline-flex; align-items: center; gap: 5px; font-weight: 600; color: #2563eb;">
+                            <i data-lucide="book-open" style="width: 14px; height: 14px;"></i>
+                            {{ a.subject }}
+                        </span>
+                    </td>
+                    <td style="text-align: right;">
+                        <span style="font-weight: 600; color: #102a67;">{{ a.date }}</span>
+                        <small style="display: block; color: #64748b; font-size: 11px;">{{ a.time }}</small>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" style="text-align: center; padding: 48px; color: #8c9ba5;">
+                        <i data-lucide="folder-open" style="width: 36px; height: 36px; margin-bottom: 10px; opacity: 0.5;"></i>
+                        <p style="margin: 0; font-size: 14px; font-weight: 600;">No attendance records found.</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 {% endblock %}

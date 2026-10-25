@@ -1,180 +1,281 @@
 {% extends "base.html" %}
 
+{% block title %}Class Attendance - AttendX{% endblock %}
+
 {% block content %}
-<div class="row mb-3">
-    <div class="col-md-12">
-        <div class="row mb-3">
-            <div class="col-md-12">
-                <div class="d-flex align-items-center mb-4">
-                    <a href="{{ url_for('teacher_dashboard') }}" class="btn btn-outline-secondary rounded-circle me-3"
-                        style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
-                        <i class="fas fa-arrow-left"></i>
-                    </a>
-                    <h2 class="mb-0 fw-bold header-highlight">Teacher Panel</h2>
-                </div>
+<!-- Page Header -->
+<div class="page-header-row" style="margin-bottom: 20px;">
+    <div>
+        <h1 class="page-title" style="font-size: 28px; font-weight: 800; color: #102a67;">Class Attendance</h1>
+        <p class="page-subtitle" style="font-size: 13.5px; color: #64748b;">Mark attendance using dynamic QR and verification</p>
+    </div>
+</div>
+
+<!-- Controls / Selector Bar -->
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 24px; flex-wrap: wrap;">
+    <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap; flex: 1;">
+        <!-- Course / Subject Selector -->
+        <div style="min-width: 260px;">
+            <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 6px;">Course</label>
+            <div style="background: #ffffff; border: 1px solid #dce8fb; border-radius: 12px; padding: 10px 14px; font-size: 13.5px; font-weight: 700; color: #102a67; display: flex; align-items: center; justify-content: space-between; box-shadow: var(--shadow-card);">
+                <span>{{ current_subject if active else "No Active Course" }}</span>
+                <i data-lucide="chevron-down" style="width: 16px; height: 16px; color: #64748b;"></i>
             </div>
         </div>
 
-        <div class="card mb-4 border-0 shadow-sm">
-            <div class="card-body p-4">
-                <form method="post" class="row g-3">
-                    {% if active %}
-                    <div class="col-md-9">
-                        <div class="d-flex align-items-center bg-light rounded p-3 border">
-                            <div class="me-4">
-                                <span class="d-block small text-muted text-uppercase fw-bold mb-1">Subject</span>
-                                <span class="fs-5 fw-bold text-dark">{{ current_subject }}</span>
-                            </div>
-                            <div class="me-4 border-start px-4">
-                                <span class="d-block small text-muted text-uppercase fw-bold mb-1">Date</span>
-                                <span class="fs-5 fw-bold text-dark">{{ current_date }}</span>
-                            </div>
-                            {% if session_name %}
-                            <div class="border-start px-4">
-                                <span class="d-block small text-muted text-uppercase fw-bold mb-1">Topic</span>
-                                <span class="fs-5 fw-bold text-dark">{{ session_name }}</span>
-                            </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                    <div class="col-md-3 d-flex align-items-center">
-                        <button type="submit" name="action" value="stop"
-                            class="btn btn-danger w-100 btn-lg fw-bold shadow-sm">
-                            <i class="fas fa-stop me-2"></i> Stop Session
-                        </button>
-                    </div>
-                    {% else %}
-                    <div class="col-12 text-center py-4">
-                        <p class="text-muted mb-3">No active session. Please start a session from your dashboard.</p>
-                        <a href="{{ url_for('teacher_dashboard') }}" class="btn btn-primary px-5 fw-bold shadow-sm">
-                            <i class="fas fa-arrow-left me-2"></i> Go to Dashboard
-                        </a>
-                    </div>
-                    {% endif %}
-                </form>
+        <!-- Class / Topic Info -->
+        <div style="min-width: 220px;">
+            <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 6px;">Class / Topic</label>
+            <div style="background: #ffffff; border: 1px solid #dce8fb; border-radius: 12px; padding: 10px 14px; font-size: 13.5px; font-weight: 600; color: #102a67; display: flex; align-items: center; justify-content: space-between; box-shadow: var(--shadow-card);">
+                <span>{{ session_name if session_name else (current_subject ~ " (Live)") if active else "Standby" }}</span>
+                <i data-lucide="chevron-down" style="width: 16px; height: 16px; color: #64748b;"></i>
             </div>
         </div>
+    </div>
 
-        <div class="card border-0 shadow-md">
-            <div class="card-body text-center p-5">
-                <h5 class="card-title text-muted text-uppercase small fw-bold ls-1 mb-3">Session Status</h5>
-                <div class="mb-4">
-                    {% if active %}
-                    <span class="badge bg-success shadow-md px-4 py-2 rounded-pill fs-6">
-                        <i class="fas fa-satellite-dish me-2"></i> BROADCASTING LIVE
-                    </span>
-                    {% else %}
-                    <span class="badge bg-inactive shadow-sm px-4 py-2 rounded-pill fs-6">
-                        <i class="fas fa-pause-circle me-2"></i> STOPPED
-                    </span>
-                    {% endif %}
-                </div>
+    <!-- Date Badge -->
+    <div>
+        <label style="display: block; font-size: 12px; font-weight: 700; color: transparent; margin-bottom: 6px;">Date</label>
+        <div style="background: #eef4ff; border: 1px solid #d8e5fc; border-radius: 12px; padding: 10px 16px; font-size: 13px; font-weight: 700; color: #2563eb; display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="calendar" style="width: 16px; height: 16px;"></i>
+            <span>{{ current_date if current_date else now }}</span>
+        </div>
+    </div>
+</div>
 
-                <p class="card-text text-muted mb-1">Session ID: <strong class="text-dark">{{ session_id }}</strong></p>
-                {% if active %}
-                <p class="card-text text-muted mb-4">Subject: <strong class="text-primary">{{ current_subject
-                        }}</strong></p>
+{% if active %}
+<!-- Live Session Main Card -->
+<div class="ax-card" style="margin-bottom: 24px; padding: 26px;">
+    <!-- Top row in card: Live badge & session started time -->
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;">
+        <span class="badge-status present" style="font-size: 12.5px; padding: 6px 14px; font-weight: 800;">
+            <span class="status-dot green"></span>
+            Live Session
+        </span>
+        <div style="font-size: 13px; color: #64748b; font-weight: 600;">
+            Session Started: <strong style="color: #102a67;">{{ session_start_formatted }}</strong>
+        </div>
+    </div>
 
-                <div class="qr-container p-3 mb-4 bg-white rounded-4 shadow-lg border-glow position-relative">
-                    <h3 class="fw-bold mb-3 text-dark">Scan to Mark Attendance</h3>
-                    <div class="position-relative d-inline-block">
-                        <img src="{{ url_for('static', filename='qr.png') }}" width="300" alt="QR Code"
-                            class="img-fluid rounded">
-                        <div
-                            class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-white p-2">
-                            <span class="visually-hidden">Live</span>
-                            <div class="spinner-grow spinner-grow-sm text-light" role="status"></div>
-                        </div>
-                    </div>
-                    <p class="text-muted mt-3 small"><i class="fas fa-sync-alt fa-spin me-1"></i> QR automatically
-                        refreshes every 15 seconds</p>
-                </div>
-
-                <script>
-                    setTimeout(() => location.reload(), 15000);
-                </script>
-                {% endif %}
-            </div>
+    <!-- Middle: QR and 15s Countdown -->
+    <div style="display: flex; align-items: center; justify-content: center; gap: 48px; padding: 10px 0 26px 0; flex-wrap: wrap;">
+        <!-- Gradient Border QR Box -->
+        <div class="qr-live-box">
+            <img src="{{ url_for('static', filename='qr.png') }}" alt="Live QR Code" style="width: 240px; height: 240px; object-fit: contain;">
         </div>
 
-        {% if active %}
-        <!-- Manual Attendance Section -->
-        <div class="card mt-4 border-0 shadow-sm">
-            <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
-                <h5 class="fw-bold"><i class="fas fa-user-check me-2 text-primary"></i> Manual Attendance</h5>
-                <p class="text-muted small">Mark attendance for students who cannot scan the QR code.</p>
+        <!-- Refresh Countdown Circular Display -->
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
+            <div style="font-size: 13px; color: #64748b; font-weight: 600;">Refreshes in</div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <svg width="34" height="34" viewBox="0 0 36 36">
+                    <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#e0eaff" stroke-width="3.5" />
+                    <path id="countdown-ring" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#2563eb" stroke-width="3.5" stroke-dasharray="100, 100" stroke-linecap="round" />
+                </svg>
+                <div id="countdown-text" style="font-size: 32px; font-weight: 800; color: #7c3aed; line-height: 1; letter-spacing: -0.5px;">15s</div>
             </div>
-            <div class="card-body">
-                {% if enrolled_students %}
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Student ID</th>
-                                <th>Name</th>
-                                <th>Status</th>
-                                <th class="text-end">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for student in enrolled_students %}
-                            <tr>
-                                <td>{{ student.sid }}</td>
-                                <td><strong>{{ student.name }}</strong></td>
-                                <td>
-                                    {% if student.sid in present_sids %}
-                                    <span class="badge bg-success">Present</span>
-                                    {{ '<small class="text-muted ms-1">(Manual)</small>'|safe if student.sid in
-                                    manual_present_sids else '<small class="text-muted ms-1">(QR)</small>'|safe }}
-                                    {% elif student.sid in absent_sids %}
-                                    <span class="badge bg-danger">Absent</span>
-                                    {% else %}
-                                    <span class="badge bg-secondary">Pending</span>
-                                    {% endif %}
-                                </td>
-                                <td class="text-end">
-                                    <form method="POST" action="{{ url_for('teacher_manual_mark') }}" class="d-inline">
-                                        <input type="hidden" name="student_sid" value="{{ student.sid }}">
-                                        <input type="hidden" name="student_name" value="{{ student.name }}">
+            <div style="font-size: 11.5px; color: #8c9ba5; font-weight: 500;">
+                <i data-lucide="shield-check" style="width: 13px; height: 13px; display: inline-block; vertical-align: -2px; color: #10b981;"></i>
+                Dynamic token protected
+            </div>
+        </div>
+    </div>
 
-                                        {% if student.sid not in present_sids %}
-                                        <button type="submit" name="mark_status" value="present"
-                                            class="btn btn-sm btn-outline-success">
-                                            Mark Present
-                                        </button>
-                                        {% endif %}
-
-                                        {% if student.sid not in absent_sids and student.sid not in present_sids %}
-                                        <button type="submit" name="mark_status" value="absent"
-                                            class="btn btn-sm btn-outline-danger ms-1">
-                                            Mark Absent
-                                        </button>
-                                        {% endif %}
-
-                                        {% if student.sid in present_sids or student.sid in absent_sids %}
-                                        <button type="submit" name="mark_status" value="clear"
-                                            class="btn btn-sm btn-outline-secondary ms-1">
-                                            Clear
-                                        </button>
-                                        {% endif %}
-                                    </form>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
+    <!-- Session Progress Bar -->
+    <div style="background: #f8fafc; border-radius: 14px; padding: 16px 20px; border: 1px solid #edf2f9; margin-bottom: 20px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+            <span style="font-size: 13.5px; font-weight: 700; color: #102a67;">Session Progress</span>
+            <div style="font-size: 13px; font-weight: 700; color: #102a67;">
+                <span>{{ present_count }}</span>
+                {% if total_enrolled_count > 0 %}
+                <span style="color: #64748b; font-weight: 500;"> / {{ total_enrolled_count }} present</span>
+                <span style="color: #2563eb; margin-left: 8px;">{{ progress_percentage }}%</span>
                 {% else %}
-                <p class="text-center text-muted my-3">No students found matching this subject's
-                    department/semester/section.</p>
+                <span style="color: #64748b; font-weight: 500;"> marked</span>
                 {% endif %}
             </div>
         </div>
-        {% endif %}
-
-        <div class="mt-5 text-center">
-            <a href="{{ url_for('view_attendance') }}" class="btn btn-link text-decoration-none text-muted fw-bold">
-                View Full Attendance Records <i class="fas fa-arrow-right ms-1"></i>
-            </a>
+        <div class="progress-gradient-container">
+            <div class="progress-gradient-bar" style="width: {{ progress_percentage if progress_percentage > 0 else 5 }}%;"></div>
         </div>
-        {% endblock %}
+    </div>
+
+    <!-- Verification / Security Badges Row -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+        <div style="background: #ffffff; border: 1px solid #dce8fb; border-radius: 14px; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="width: 32px; height: 32px; border-radius: 50%; background: #e6f9f0; color: #10b981; display: flex; align-items: center; justify-content: center;">
+                    <i data-lucide="shield" style="width: 16px; height: 16px;"></i>
+                </div>
+                <div>
+                    <div style="font-size: 13.5px; font-weight: 700; color: #102a67;">Token Security</div>
+                    <div style="font-size: 11.5px; color: #64748b;">Dynamic refresh active</div>
+                </div>
+            </div>
+            <span class="badge-status good">Active</span>
+        </div>
+
+        <div style="background: #ffffff; border: 1px solid #dce8fb; border-radius: 14px; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="width: 32px; height: 32px; border-radius: 50%; background: #e0f2fe; color: #0284c7; display: flex; align-items: center; justify-content: center;">
+                    <i data-lucide="radio" style="width: 16px; height: 16px;"></i>
+                </div>
+                <div>
+                    <div style="font-size: 13.5px; font-weight: 700; color: #102a67;">Broadcast Channel</div>
+                    <div style="font-size: 11.5px; color: #64748b;">Session #{{ session_id }}</div>
+                </div>
+            </div>
+            <span class="badge-status good" style="background: #e0f2fe; color: #0284c7;">Online</span>
+        </div>
+    </div>
+</div>
+
+<!-- Live Student List Card -->
+<div class="ax-card" style="margin-bottom: 24px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="users" style="width: 18px; height: 18px; color: #2563eb;"></i>
+            <span style="font-size: 15px; font-weight: 700; color: #102a67;">Live Student List</span>
+        </div>
+        <span style="font-size: 12.5px; color: #64748b; font-weight: 600;">
+            {{ enrolled_students|length if enrolled_students else present_count }} Students
+        </span>
+    </div>
+
+    <div class="ax-table-wrapper">
+        <table class="ax-table">
+            <thead>
+                <tr>
+                    <th style="width: 45px;">#</th>
+                    <th>Name</th>
+                    <th>Roll No / ID</th>
+                    <th>Status</th>
+                    <th>Time</th>
+                    <th style="text-align: right;">Manual Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if enrolled_students %}
+                {% for student in enrolled_students %}
+                <tr>
+                    <td style="color: #64748b; font-weight: 600;">{{ loop.index }}</td>
+                    <td>
+                        <div style="display: flex; align-items: center;">
+                            <div class="student-avatar" style="background: linear-gradient(135deg, #e0e7ff, #ede9fe); color: #4338ca;">
+                                {{ student.name[:2]|upper }}
+                            </div>
+                            <strong style="color: #102a67; font-size: 13.5px;">{{ student.name }}</strong>
+                        </div>
+                    </td>
+                    <td style="color: #64748b; font-weight: 600;">{{ student.sid }}</td>
+                    <td>
+                        {% if student.sid in present_sids %}
+                        <span class="badge-status present">
+                            <i data-lucide="circle-check" style="width: 13px; height: 13px;"></i>
+                            Present
+                        </span>
+                        {% elif student.sid in absent_sids %}
+                        <span class="badge-status absent">
+                            <i data-lucide="triangle-alert" style="width: 13px; height: 13px;"></i>
+                            Absent
+                        </span>
+                        {% else %}
+                        <span class="badge-status pending">
+                            <i data-lucide="clock" style="width: 13px; height: 13px;"></i>
+                            Pending
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td style="color: #64748b; font-size: 12.5px; font-weight: 500;">
+                        {{ record_time_map.get(student.sid, '-') }}
+                    </td>
+                    <td style="text-align: right;">
+                        <form method="POST" action="{{ url_for('teacher_manual_mark') }}" style="display: inline-flex; gap: 4px;">
+                            <input type="hidden" name="student_sid" value="{{ student.sid }}">
+                            <input type="hidden" name="student_name" value="{{ student.name }}">
+
+                            {% if student.sid not in present_sids %}
+                            <button type="submit" name="mark_status" value="present" class="btn-ax-secondary" style="padding: 4px 10px; font-size: 11px;">
+                                Mark Present
+                            </button>
+                            {% endif %}
+
+                            {% if student.sid not in absent_sids and student.sid not in present_sids %}
+                            <button type="submit" name="mark_status" value="absent" class="btn-ax-secondary" style="background: #fef2f2; color: #dc2626; border-color: #fee2e2; padding: 4px 10px; font-size: 11px;">
+                                Absent
+                            </button>
+                            {% endif %}
+
+                            {% if student.sid in present_sids or student.sid in absent_sids %}
+                            <button type="submit" name="mark_status" value="clear" class="btn-ax-secondary" style="background: #f8fafc; color: #64748b; padding: 4px 10px; font-size: 11px;">
+                                Clear
+                            </button>
+                            {% endif %}
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% else %}
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: 32px; color: #8c9ba5;">
+                        <i data-lucide="users" style="width: 32px; height: 32px; margin-bottom: 6px; opacity: 0.5;"></i>
+                        <div>No enrolled students found for this class cohort yet. Students can scan to join!</div>
+                    </td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Prominent Pink End Session Button -->
+<form method="POST" action="{{ url_for('teacher') }}" onsubmit="return confirm('Are you sure you want to end this attendance session? Unmarked students will be marked absent.');">
+    <input type="hidden" name="action" value="stop">
+    <button type="submit" class="btn-end-session">
+        <i data-lucide="stop-circle" style="width: 18px; height: 18px;"></i>
+        <span>End Session</span>
+    </button>
+</form>
+
+{% else %}
+<!-- Standby / Start Session Card -->
+<div class="ax-card" style="text-align: center; padding: 48px 24px;">
+    <div style="width: 64px; height: 64px; border-radius: 50%; background: #e0f2fe; color: #0284c7; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto;">
+        <i data-lucide="qr-code" style="width: 32px; height: 32px;"></i>
+    </div>
+    <h2 style="font-size: 22px; font-weight: 800; color: #102a67; margin-bottom: 8px;">No Active Live Session</h2>
+    <p style="color: #64748b; font-size: 14px; max-width: 480px; margin: 0 auto 24px auto;">
+        Start a new attendance session from your dashboard to begin broadcasting live dynamic QR codes.
+    </p>
+    <a href="{{ url_for('teacher_dashboard') }}" class="btn-export-gradient">
+        <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
+        <span>Go to Dashboard to Start Session</span>
+    </a>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+{% if active %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let timeLeft = 15;
+    const ring = document.getElementById('countdown-ring');
+    const text = document.getElementById('countdown-text');
+    
+    const interval = setInterval(function() {
+        timeLeft--;
+        if (text) text.innerText = (timeLeft < 10 ? '0' + timeLeft : timeLeft) + 's';
+        if (ring) {
+            const pct = (timeLeft / 15) * 100;
+            ring.setAttribute('stroke-dasharray', `${pct}, 100`);
+        }
+        if (timeLeft <= 0) {
+            clearInterval(interval);
+            location.reload();
+        }
+    }, 1000);
+});
+</script>
+{% endif %}
+{% endblock %}

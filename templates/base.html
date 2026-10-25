@@ -1,138 +1,192 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AttendX - Next Gen Attendance</title>
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <!-- Custom CSS -->
+    <title>{% block title %}AttendX - Next Gen Attendance{% endblock %}</title>
+    <!-- Google Fonts: Plus Jakarta Sans / Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Custom Design System CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    {% block extra_head %}{% endblock %}
 </head>
-
 <body>
+    <!-- Floating Background Particles Canvas -->
     <canvas id="bg-canvas"></canvas>
+    <div class="app-container">
+        <div class="app-frame">
+            {% if session.get('user') %}
+            <!-- Left Sidebar Navigation -->
+            <aside class="app-sidebar">
+                <a href="{{ url_for('home') }}" class="brand-header">
+                    <div class="brand-icon">
+                        <i data-lucide="scan-qr-code"></i>
+                    </div>
+                    <span class="brand-title">Attend<span>X</span></span>
+                </a>
 
-    <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
-        <div class="container">
-            <a class="navbar-brand d-flex align-items-center" href="{{ url_for('home') }}">
-                <img src="{{ url_for('static', filename='logo.png') }}" alt="AttendX Logo" height="70"
-                    class="logo-light logo-animate">
-                <img src="{{ url_for('static', filename='logo_dark.png') }}" alt="AttendX Logo" height="70"
-                    class="logo-dark logo-animate d-none">
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto align-items-center">
-                    {% if session.get('user') %}
-                    {% if session.get('role') == 'teacher' %}
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('teacher_dashboard') }}">
-                            <i class="fas fa-chart-line me-1"></i> Dashboard</a>
-                    </li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('teacher') }}">
-                            <i class="fas fa-qrcode me-1"></i> Check In</a>
-                    </li>
-                    {% elif session.get('role') == 'student' %}
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('student_dashboard') }}">
-                            <i class="fas fa-user-graduate me-1"></i> Dashboard</a>
-                    </li>
-                    {% elif session.get('role') == 'admin' %}
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('admin_dashboard') }}">
-                            <i class="fas fa-shield-alt me-1"></i> Admin</a>
-                    </li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('admin_users') }}">
-                            <i class="fas fa-users me-1"></i> Users</a>
-                    </li>
-                    {% endif %}
-                    <li class="nav-item ms-lg-3">
-                        <a href="{{ url_for('logout') }}" class="btn btn-danger btn-sm">
-                            <i class="fas fa-sign-out-alt"></i> Logout
+                <ul class="sidebar-menu">
+                    {% if session.get('role') == 'student' %}
+                    <li>
+                        <a href="{{ url_for('student_dashboard') }}" class="sidebar-link {% if request.endpoint == 'student_dashboard' %}active{% endif %}">
+                            <i data-lucide="layout-dashboard"></i>
+                            <span>Dashboard</span>
                         </a>
                     </li>
-                    {% else %}
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('login') }}">Login</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('register') }}">Register</a></li>
-                    {% endif %}
-                    <li class="nav-item ms-lg-3 d-flex align-items-center">
-                        <button id="darkModeToggle" class="btn btn-theme-toggle rounded-circle shadow-sm"
-                            aria-label="Toggle Dark Mode" title="Toggle Dark/Light Mode">
-                            <i class="fas fa-moon toggle-icon"></i>
-                        </button>
+                    <li>
+                        <a href="{{ url_for('student_report') }}" class="sidebar-link {% if request.endpoint == 'student_report' %}active{% endif %}">
+                            <i data-lucide="book-open"></i>
+                            <span>My Classes</span>
+                        </a>
                     </li>
+                    <li>
+                        <a href="{{ url_for('attendance_view') }}" class="sidebar-link {% if request.endpoint == 'attendance_view' %}active{% endif %}">
+                            <i data-lucide="clipboard-check"></i>
+                            <span>Attendance</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('student') }}" class="sidebar-link {% if request.endpoint == 'student' %}active{% endif %}">
+                            <i data-lucide="qr-code"></i>
+                            <span>Scan Attendance</span>
+                        </a>
+                    </li>
+                    {% elif session.get('role') == 'teacher' %}
+                    <li>
+                        <a href="{{ url_for('teacher_dashboard') }}" class="sidebar-link {% if request.endpoint == 'teacher_dashboard' %}active{% endif %}">
+                            <i data-lucide="layout-dashboard"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('teacher') }}" class="sidebar-link {% if request.endpoint == 'teacher' %}active{% endif %}">
+                            <i data-lucide="qr-code"></i>
+                            <span>Live Session</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('view_attendance') }}" class="sidebar-link {% if request.endpoint == 'view_attendance' %}active{% endif %}">
+                            <i data-lucide="clipboard-check"></i>
+                            <span>Attendance Log</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('teacher_sessions') }}" class="sidebar-link {% if request.endpoint in ['teacher_sessions', 'edit_session'] %}active{% endif %}">
+                            <i data-lucide="history"></i>
+                            <span>Past Sessions</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('attendance_view') }}" class="sidebar-link {% if request.endpoint == 'attendance_view' %}active{% endif %}">
+                            <i data-lucide="chart-no-axes-combined"></i>
+                            <span>Analytics</span>
+                        </a>
+                    </li>
+                    {% elif session.get('role') == 'admin' %}
+                    <li>
+                        <a href="{{ url_for('admin_dashboard') }}" class="sidebar-link {% if request.endpoint == 'admin_dashboard' %}active{% endif %}">
+                            <i data-lucide="layout-dashboard"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('admin_users') }}" class="sidebar-link {% if request.endpoint == 'admin_users' %}active{% endif %}">
+                            <i data-lucide="users"></i>
+                            <span>Students & Staff</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('admin_reports') }}" class="sidebar-link {% if request.endpoint == 'admin_reports' %}active{% endif %}">
+                            <i data-lucide="file-chart-column"></i>
+                            <span>Institution Reports</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('attendance_view') }}" class="sidebar-link {% if request.endpoint == 'attendance_view' %}active{% endif %}">
+                            <i data-lucide="chart-no-axes-combined"></i>
+                            <span>Analytics</span>
+                        </a>
+                    </li>
+                    {% endif %}
                 </ul>
-            </div>
+
+                <div class="sidebar-footer">
+                    <a href="{{ url_for('logout') }}" class="sidebar-logout">
+                        <i data-lucide="log-out"></i>
+                        <span>Logout</span>
+                    </a>
+                </div>
+            </aside>
+            {% endif %}
+
+            <!-- Main Content Area -->
+            <main class="app-main">
+                {% if session.get('user') %}
+                <!-- Top Navigation Bar -->
+                <header class="top-navbar">
+                    <div class="search-box">
+                        <i data-lucide="search" class="search-icon"></i>
+                        <input type="text" placeholder="Search anything...">
+                    </div>
+                    <div class="top-nav-actions">
+                        <button class="nav-icon-btn" aria-label="Notifications" title="Notifications">
+                            <i data-lucide="bell"></i>
+                            <span class="nav-icon-badge"></span>
+                        </button>
+                        <div class="user-avatar-badge" title="{{ session.get('name') }} ({{ session.get('role') }})">
+                            {{ session.get('name', 'U')[:2]|upper }}
+                        </div>
+                    </div>
+                </header>
+                {% endif %}
+
+                <!-- Page Body -->
+                <div class="page-body">
+                    <!-- Flash Messages Notification Container -->
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                    <div style="margin-bottom: 20px;">
+                        {% for category, message in messages %}
+                        <div class="ax-alert ax-alert-{{ category }}">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                {% if category == 'success' %}
+                                <i data-lucide="circle-check" style="width: 18px; height: 18px;"></i>
+                                {% elif category == 'warning' %}
+                                <i data-lucide="triangle-alert" style="width: 18px; height: 18px;"></i>
+                                {% else %}
+                                <i data-lucide="alert-circle" style="width: 18px; height: 18px;"></i>
+                                {% endif %}
+                                <span>{{ message }}</span>
+                            </div>
+                            <button onclick="this.parentElement.remove()" style="background: none; border: none; cursor: pointer; color: inherit; opacity: 0.6;">&times;</button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    {% endwith %}
+
+                    {% block content %}{% endblock %}
+                </div>
+            </main>
         </div>
-    </nav>
-
-    <div style="height: 80px;"></div> <!-- Spacer for fixed navbar -->
-
-    <div class="container mt-5 fade-in">
-        <!-- Flash Messages -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-        {% for category, message in messages %}
-        <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm alert-custom alert-{{ category }}-custom"
-            role="alert">
-            <i class="fas fa-{{ 'check-circle' if category == 'success' else 'exclamation-triangle' }} me-2"></i>
-            {{ message }}
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
-        </div>
-        {% endfor %}
-        {% endif %}
-        {% endwith %}
-
-        {% block content %}{% endblock %}
     </div>
 
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Particles -->
-    <script src="{{ url_for('static', filename='particles.js') }}"></script>
-
-    <!-- Dark Mode Script -->
+    <!-- Initialize Lucide Icons -->
     <script>
-        const darkModeToggle = document.getElementById('darkModeToggle');
-        const body = document.body;
-        const icon = darkModeToggle ? darkModeToggle.querySelector('i') : null;
-
-        // Check local storage for preference
-        if (localStorage.getItem('darkMode') === 'enabled') {
-            body.classList.add('dark-mode');
-            if (icon) {
-                icon.classList.remove('fa-moon');
-                icon.classList.add('fa-sun');
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.lucide) {
+                lucide.createIcons();
             }
-        }
-
-        if (darkModeToggle) {
-            darkModeToggle.addEventListener('click', () => {
-                // Add spin animation class to icon
-                icon.classList.add('spin-animation');
-
-                setTimeout(() => {
-                    body.classList.toggle('dark-mode');
-
-                    if (body.classList.contains('dark-mode')) {
-                        localStorage.setItem('darkMode', 'enabled');
-                        icon.classList.remove('fa-moon');
-                        icon.classList.add('fa-sun');
-                    } else {
-                        localStorage.setItem('darkMode', 'disabled');
-                        icon.classList.remove('fa-sun');
-                        icon.classList.add('fa-moon');
-                    }
-
-                    // Remove animation class after spin completes
-                    setTimeout(() => icon.classList.remove('spin-animation'), 400);
-                }, 200); // Swap icon mid-spin
-            });
-        }
+        });
     </script>
+    <!-- Particles Animation -->
+    <script src="{{ url_for('static', filename='particles.js') }}"></script>
+    {% block extra_scripts %}{% endblock %}
 </body>
-
 </html>

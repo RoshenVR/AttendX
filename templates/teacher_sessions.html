@@ -1,84 +1,75 @@
 {% extends "base.html" %}
 
+{% block title %}Past Sessions - AttendX{% endblock %}
+
 {% block content %}
-<div class="row mb-5">
-    <div class="col-md-12">
-        <div class="d-flex align-items-center mb-4">
-            <a href="{{ url_for('teacher_dashboard') }}" class="btn btn-outline-secondary rounded-circle me-3"
-                style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
-                <i class="fas fa-arrow-left"></i>
-            </a>
-            <h2 class="mb-0 fw-bold header-highlight">
-                <i class="fas fa-history me-2"></i>Attendance Session History
-            </h2>
-        </div>
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+    <div>
+        <h1 style="font-size: 24px; font-weight: 800; color: #102a67; margin: 0;">Attendance Session History</h1>
+        <p style="font-size: 13.5px; color: #64748b; margin: 4px 0 0 0;">Review past class sessions and make retroactive attendance corrections</p>
     </div>
+    <a href="{{ url_for('teacher_dashboard') }}" class="btn-filter-apply" style="padding: 9px 16px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
+        <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
+        <span>Dashboard</span>
+    </a>
 </div>
 
-<div class="card shadow-sm border-0">
-    <div class="card-header bg-transparent border-0 py-3">
-        <h5 class="text-uppercase text-muted small fw-bold ls-1 mb-0">Past Sessions</h5>
-    </div>
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="bg-light">
-                    <tr>
-                        <th class="ps-4 py-3 text-muted small text-uppercase">Session ID</th>
-                        <th class="py-3 text-muted small text-uppercase">Subject</th>
-                        <th class="py-3 text-muted small text-uppercase">Date</th>
-                        <th class="py-3 text-muted small text-uppercase">Topic</th>
-                        <th class="pe-4 py-3 text-muted small text-uppercase text-end">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for sess in sessions %}
-                    <tr>
-                        <td class="ps-4 text-muted small">#{{ sess.session_id }}</td>
-                        <td>
-                            <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3">
-                                {{ sess.subject }}
-                            </span>
-                        </td>
-                        <td class="fw-bold text-dark">{{ sess.session_date }}</td>
-                        <td class="text-muted small">{{ sess.session_name or 'N/A' }}</td>
-                        <td class="pe-4 text-end">
-                            <a href="{{ url_for('edit_session', session_id=sess.session_id) }}"
-                                class="btn btn-sm btn-outline-primary rounded-pill px-3">
-                                <i class="fas fa-edit me-1"></i> Edit Attendance
-                            </a>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="5" class="text-center py-5">
-                            <div class="text-muted opacity-50 mb-3">
-                                <i class="fas fa-folder-open fa-3x"></i>
-                            </div>
-                            <p class="text-muted small fw-bold">No sessions found.</p>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+<div class="ax-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(37, 99, 235, 0.1); display: flex; align-items: center; justify-content: center; color: #2563eb;">
+                <i data-lucide="history" style="width: 20px; height: 20px;"></i>
+            </div>
+            <div>
+                <h2 class="card-title" style="margin: 0; font-size: 16px;">Concluded Sessions</h2>
+                <p style="margin: 0; font-size: 12px; color: #64748b;">Previous live sessions initiated by faculty</p>
+            </div>
         </div>
+        <span class="badge-status status-present">{{ sessions|length }} Sessions</span>
+    </div>
+
+    <div style="overflow-x: auto;">
+        <table class="ax-table">
+            <thead>
+                <tr>
+                    <th>Session ID</th>
+                    <th>Course / Subject</th>
+                    <th>Date</th>
+                    <th>Topic / Description</th>
+                    <th style="text-align: right;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sess in sessions %}
+                <tr>
+                    <td style="font-family: monospace; font-size: 12px; color: #64748b;">#{{ sess.session_id }}</td>
+                    <td>
+                        <span style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; color: #2563eb;">
+                            <i data-lucide="book-open" style="width: 14px; height: 14px;"></i>
+                            {{ sess.subject }}
+                        </span>
+                    </td>
+                    <td style="font-weight: 600; color: #102a67;">{{ sess.session_date }}</td>
+                    <td style="color: #64748b; font-size: 13px;">{{ sess.session_name or 'Regular Lecture' }}</td>
+                    <td style="text-align: right;">
+                        <a href="{{ url_for('edit_session', session_id=sess.session_id) }}"
+                           style="background: #ffffff; border: 1px solid #cbd5e1; color: #2563eb; border-radius: 8px; padding: 6px 14px; font-size: 12px; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);">
+                            <i data-lucide="edit-2" style="width: 13px; height: 13px;"></i>
+                            Edit Attendance
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" style="text-align: center; padding: 48px; color: #8c9ba5;">
+                        <i data-lucide="folder-open" style="width: 36px; height: 36px; margin-bottom: 10px; opacity: 0.5;"></i>
+                        <p style="margin: 0; font-size: 14px; font-weight: 600;">No sessions found.</p>
+                        <p style="margin: 4px 0 0 0; font-size: 12.5px;">Launch your first session from the Teacher Dashboard.</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
-
-<style>
-    .header-highlight {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-    }
-
-    .card {
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    .card:hover {
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
-    }
-</style>
 {% endblock %}

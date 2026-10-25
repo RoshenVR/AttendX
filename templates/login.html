@@ -1,65 +1,53 @@
 {% extends "base.html" %}
 
+{% block title %}Sign In - AttendX{% endblock %}
+
 {% block content %}
-<div class="row justify-content-center align-items-center" style="min-height: 80vh;">
-    <div class="col-md-6 col-lg-5">
-        <div class="card shadow-lg border-0 bg-dark-subtle">
-            <div class="card-body p-5">
-                <div class="text-center mb-4">
-                    <!-- <img src="{{ url_for('static', filename='logo.png') }}" alt="AttendX Logo" height="120"
-                        class="mb-3 logo-animate"> -->
-                    <h1 class="fw-bold display-5 text-gradient">AttendX</h1>
-                    <p class="text-muted">Next Gen Attendance System <span
-                            class="badge bg-danger rounded-pill ms-2">v3.0</span></p>
-                </div>
-
-                <div class="d-flex justify-content-center mb-4 bg-dark p-1 rounded-pill border border-secondary">
-                    <button onclick="setRole('student')" id="btn-student"
-                        class="btn btn-primary active w-33 rounded-pill transition-all text-sm">Student</button>
-                    <button onclick="setRole('teacher')" id="btn-teacher"
-                        class="btn btn-link text-muted w-33 rounded-pill transition-all text-decoration-none text-sm">Teacher</button>
-                    <button onclick="setRole('admin')" id="btn-admin"
-                        class="btn btn-link text-muted w-33 rounded-pill transition-all text-decoration-none text-sm">Admin</button>
-                </div>
-
-                <form method="post" id="login-form">
-                    <input type="hidden" name="role" id="role-input" value="student">
-
-                    <div class="mb-3">
-                        <label for="username" class="form-label text-muted">ID / Username</label>
-                        <div class="input-group">
-                            <span class="input-group-text bg-dark border-secondary text-secondary"><i
-                                    class="fas fa-user"></i></span>
-                            <input type="text" name="username" id="username"
-                                class="form-control bg-dark text-light border-secondary" placeholder="Enter your ID"
-                                required>
-                        </div>
-                    </div>
-
-                    <div class="mb-4">
-                        <label for="password" class="form-label text-muted">Password</label>
-                        <div class="input-group">
-                            <span class="input-group-text bg-dark border-secondary text-secondary"><i
-                                    class="fas fa-lock"></i></span>
-                            <input type="password" name="password" id="password"
-                                class="form-control bg-dark text-light border-secondary" placeholder="Enter password"
-                                required>
-                        </div>
-                    </div>
-
-                    <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-primary btn-lg shadow-lg">
-                            Login <i class="fas fa-arrow-right ms-2"></i>
-                        </button>
-                    </div>
-                </form>
-
-                <p class="text-center mt-4 mb-0 text-muted small">
-                    Don't have an account? <a href="{{ url_for('register') }}"
-                        class="text-primary fw-bold text-decoration-none">Register here</a>
-                </p>
+<div style="display: flex; align-items: center; justify-content: center; min-height: 75vh; padding: 20px 0;">
+    <div class="ax-card" style="width: 100%; max-width: 440px; padding: 36px 32px; box-shadow: var(--shadow-lg);">
+        <div style="text-align: center; margin-bottom: 28px;">
+            <div class="brand-icon" style="margin: 0 auto 14px auto; width: 44px; height: 44px; font-size: 24px;">
+                <i data-lucide="scan-qr-code" style="width: 24px; height: 24px;"></i>
             </div>
+            <h1 class="brand-title" style="font-size: 26px;">Attend<span>X</span></h1>
+            <p style="color: #64748b; font-size: 13.5px; margin-top: 4px;">Sign in to your institutional account</p>
         </div>
+
+        <!-- Role Selector Tabs -->
+        <div style="display: flex; background: #f1f5fa; padding: 4px; border-radius: var(--radius-pill); margin-bottom: 24px; border: 1px solid #e2eaf5;">
+            <button type="button" onclick="setRole('student')" id="btn-student" style="flex: 1; padding: 8px 12px; border-radius: var(--radius-pill); font-size: 13px; font-weight: 700; border: none; cursor: pointer; background: #ffffff; color: #2563eb; box-shadow: 0 2px 6px rgba(0,0,0,0.06); transition: all 0.2s ease;">Student</button>
+            <button type="button" onclick="setRole('teacher')" id="btn-teacher" style="flex: 1; padding: 8px 12px; border-radius: var(--radius-pill); font-size: 13px; font-weight: 600; border: none; cursor: pointer; background: transparent; color: #64748b; transition: all 0.2s ease;">Teacher</button>
+            <button type="button" onclick="setRole('admin')" id="btn-admin" style="flex: 1; padding: 8px 12px; border-radius: var(--radius-pill); font-size: 13px; font-weight: 600; border: none; cursor: pointer; background: transparent; color: #64748b; transition: all 0.2s ease;">Admin</button>
+        </div>
+
+        <form method="post" id="login-form">
+            <input type="hidden" name="role" id="role-input" value="student">
+
+            <div style="margin-bottom: 16px;">
+                <label for="username" style="display: block; font-size: 12.5px; font-weight: 700; color: #475569; margin-bottom: 6px;">ID / Username</label>
+                <div style="position: relative;">
+                    <i data-lucide="user" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: #8c9ba5;"></i>
+                    <input type="text" name="username" id="username" class="ax-input" style="padding-left: 40px;" placeholder="e.g. S10294 or teacher ID" required>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 24px;">
+                <label for="password" style="display: block; font-size: 12.5px; font-weight: 700; color: #475569; margin-bottom: 6px;">Password</label>
+                <div style="position: relative;">
+                    <i data-lucide="lock" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: #8c9ba5;"></i>
+                    <input type="password" name="password" id="password" class="ax-input" style="padding-left: 40px;" placeholder="Enter password" required>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-scan-qr" style="width: 100%; border-radius: 12px; padding: 13px;">
+                <span>Sign In</span>
+                <i data-lucide="arrow-right" style="width: 18px; height: 18px;"></i>
+            </button>
+        </form>
+
+        <p style="text-align: center; margin-top: 22px; margin-bottom: 0; font-size: 13px; color: #64748b;">
+            Don't have an account? <a href="{{ url_for('register') }}" style="color: #2563eb; font-weight: 700; text-decoration: none;">Register here</a>
+        </p>
     </div>
 </div>
 
@@ -67,19 +55,21 @@
     function setRole(role) {
         document.getElementById('role-input').value = role;
 
-        const btns = {
-            'student': document.getElementById('btn-student'),
-            'teacher': document.getElementById('btn-teacher'),
-            'admin': document.getElementById('btn-admin')
-        };
-
-        // Reset all
-        for (const key in btns) {
-            btns[key].className = 'btn btn-link text-muted w-33 rounded-pill transition-all text-decoration-none text-sm';
-        }
-
-        // Set active
-        btns[role].className = 'btn btn-primary active w-33 rounded-pill transition-all text-sm';
+        const roles = ['student', 'teacher', 'admin'];
+        roles.forEach(r => {
+            const btn = document.getElementById('btn-' + r);
+            if (r === role) {
+                btn.style.background = '#ffffff';
+                btn.style.color = '#2563eb';
+                btn.style.fontWeight = '700';
+                btn.style.boxShadow = '0 2px 6px rgba(0,0,0,0.06)';
+            } else {
+                btn.style.background = 'transparent';
+                btn.style.color = '#64748b';
+                btn.style.fontWeight = '600';
+                btn.style.boxShadow = 'none';
+            }
+        });
     }
 </script>
 {% endblock %}

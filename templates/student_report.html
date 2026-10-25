@@ -1,96 +1,102 @@
 {% extends "base.html" %}
 
+{% block title %}My Attendance Report - AttendX{% endblock %}
+
 {% block content %}
-<div class="row align-items-center mb-5">
-    <div class="col-md-6">
-        <div class="d-flex align-items-center">
-            <a href="{{ url_for('student_dashboard') }}" class="btn btn-outline-secondary rounded-circle me-3"
-                style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
-                <i class="fas fa-arrow-left"></i>
-            </a>
-            <div>
-                <h2 class="display-6 fw-bold mb-0">My Attendance Report</h2>
-                <p class="text-muted mb-0">Subject-wise attendance summary</p>
-            </div>
-        </div>
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+    <div>
+        <h1 style="font-size: 24px; font-weight: 800; color: #102a67; margin: 0;">My Attendance Report</h1>
+        <p style="font-size: 13.5px; color: #64748b; margin: 4px 0 0 0;">Subject-wise attendance breakdown and eligibility criteria</p>
     </div>
-    <div class="col-md-6 text-md-end">
-        <a href="{{ url_for('export_student_report') }}" class="btn btn-primary">
-            <i class="fas fa-download me-2"></i>Download CSV
+    <div style="display: flex; gap: 10px;">
+        <a href="{{ url_for('export_student_report') }}" class="btn-export-gradient" style="padding: 9px 18px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
+            <i data-lucide="download" style="width: 16px; height: 16px;"></i>
+            <span>Download CSV</span>
+        </a>
+        <a href="{{ url_for('student_dashboard') }}" class="btn-filter-apply" style="padding: 9px 16px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
+            <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
+            <span>Dashboard</span>
         </a>
     </div>
 </div>
 
-<!-- Report Table -->
-<div class="card border-0 shadow-sm">
-    <div class="card-body">
-        {% if report %}
-        <div class="table-responsive">
-            <table class="table table-dark table-hover align-middle">
-                <thead>
-                    <tr>
-                        <th>Subject</th>
-                        <th class="text-center">Total Classes</th>
-                        <th class="text-center">Attended</th>
-                        <th class="text-center">Percentage</th>
-                        <th class="text-center">Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in report %}
-                    <tr>
-                        <td><strong>{{ item.subject_name }}</strong></td>
-                        <td class="text-center">{{ item.total_classes }}</td>
-                        <td class="text-center">{{ item.attended }}</td>
-                        <td class="text-center">
-                            <strong
-                                class="{% if item.percentage >= 75 %}text-success{% elif item.percentage >= 50 %}text-warning{% else %}text-danger{% endif %}">
-                                {{ item.percentage }}%
-                            </strong>
-                        </td>
-                        <td class="text-center">
-                            {% if item.percentage >= 75 %}
-                            <span class="badge bg-success">Good</span>
-                            {% elif item.percentage >= 50 %}
-                            <span class="badge bg-warning">Average</span>
-                            {% else %}
-                            <span class="badge bg-danger">Poor</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+<div class="ax-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(37, 99, 235, 0.1); display: flex; align-items: center; justify-content: center; color: #2563eb;">
+                <i data-lucide="book-check" style="width: 20px; height: 20px;"></i>
+            </div>
+            <div>
+                <h2 class="card-title" style="margin: 0; font-size: 16px;">Course Standing Overview</h2>
+                <p style="margin: 0; font-size: 12px; color: #64748b;">Must maintain 75% or higher to avoid examination shortage warnings</p>
+            </div>
         </div>
-        {% else %}
-        <p class="text-muted text-center py-4">
-            <i class="fas fa-inbox fa-3x mb-3 d-block"></i>
-            No attendance records found. Start attending classes to see your report!
-        </p>
-        {% endif %}
+        <span class="badge-status status-present">{{ report|length }} Subjects</span>
+    </div>
+
+    <div style="overflow-x: auto;">
+        <table class="ax-table">
+            <thead>
+                <tr>
+                    <th>Subject</th>
+                    <th style="text-align: center;">Total Classes</th>
+                    <th style="text-align: center;">Attended</th>
+                    <th style="text-align: center;">Attendance %</th>
+                    <th style="text-align: right;">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in report %}
+                <tr>
+                    <td>
+                        <span style="font-weight: 700; color: #102a67;">{{ item.subject_name }}</span>
+                    </td>
+                    <td style="text-align: center; color: #64748b; font-weight: 600;">{{ item.total_classes }}</td>
+                    <td style="text-align: center; font-weight: 700; color: #10b981;">{{ item.attended }}</td>
+                    <td style="text-align: center;">
+                        <span style="font-size: 15px; font-weight: 800; {% if item.percentage >= 75 %}color: #10b981;{% elif item.percentage >= 50 %}color: #d97706;{% else %}color: #ef4444;{% endif %}">
+                            {{ item.percentage }}%
+                        </span>
+                    </td>
+                    <td style="text-align: right;">
+                        {% if item.percentage >= 75 %}
+                        <span class="badge-status status-present"><i data-lucide="check" style="width: 12px; height: 12px; margin-right: 4px;"></i>Good Standing</span>
+                        {% elif item.percentage >= 50 %}
+                        <span class="badge-status status-pending"><i data-lucide="alert-triangle" style="width: 12px; height: 12px; margin-right: 4px;"></i>Needs Attention</span>
+                        {% else %}
+                        <span class="badge-status status-absent"><i data-lucide="alert-octagon" style="width: 12px; height: 12px; margin-right: 4px;"></i>Shortage Risk</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" style="text-align: center; padding: 48px; color: #8c9ba5;">
+                        <i data-lucide="inbox" style="width: 36px; height: 36px; margin-bottom: 10px; opacity: 0.5;"></i>
+                        <p style="margin: 0; font-size: 14px; font-weight: 600;">No attendance records found.</p>
+                        <p style="margin: 4px 0 0 0; font-size: 12.5px;">Check-ins will appear here as you attend lectures.</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 
-<!-- Color Legend -->
-{% if report %}
-<div class="card border-0 shadow-sm mt-4">
-    <div class="card-body">
-        <h6 class="fw-bold mb-3">Status Legend</h6>
-        <div class="d-flex gap-4">
-            <div>
-                <span class="badge bg-success">Good</span>
-                <small class="text-muted ms-2">75% and above</small>
-            </div>
-            <div>
-                <span class="badge bg-warning">Average</span>
-                <small class="text-muted ms-2">50% - 74%</small>
-            </div>
-            <div>
-                <span class="badge bg-danger">Poor</span>
-                <small class="text-muted ms-2">Below 50%</small>
-            </div>
+<div class="ax-card" style="margin-top: 24px; padding: 18px 24px;">
+    <h3 style="font-size: 13.5px; font-weight: 700; color: #102a67; margin: 0 0 12px 0;">Institutional Criteria Legend</h3>
+    <div style="display: flex; gap: 24px; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="badge-status status-present">Good Standing</span>
+            <span style="font-size: 12px; color: #64748b;">75% and above (Eligible for exams)</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="badge-status status-pending">Needs Attention</span>
+            <span style="font-size: 12px; color: #64748b;">50% - 74% (Shortage risk imminent)</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="badge-status status-absent">Shortage Risk</span>
+            <span style="font-size: 12px; color: #64748b;">Below 50% (Parent notification triggered)</span>
         </div>
     </div>
 </div>
-{% endif %}
 {% endblock %}

@@ -1,129 +1,175 @@
 {% extends "base.html" %}
 
+{% block title %}User Management - AttendX{% endblock %}
+
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
     <div>
-        <h2 class="fw-bold mb-0">User Management</h2>
-        <p class="text-muted">Manage system access</p>
+        <h1 style="font-size: 24px; font-weight: 800; color: #102a67; margin: 0;">User Management</h1>
+        <p style="font-size: 13.5px; color: #64748b; margin: 4px 0 0 0;">Manage faculty access, review student registrations, and manage role credentials</p>
     </div>
-    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary">
-        <i class="fas fa-arrow-left me-2"></i>Back
+    <a href="{{ url_for('admin_dashboard') }}" class="btn-filter-apply" style="padding: 9px 16px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
+        <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
+        <span>Back to Overview</span>
     </a>
 </div>
 
-<div class="row g-4">
-    <!-- Teachers List -->
-    <div class="col-12">
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-transparent border-0">
-                <h5 class="fw-bold text-primary"><i class="fas fa-chalkboard-teacher me-2"></i>Teachers</h5>
-            </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="bg-dark text-light">
-                            <tr>
-                                <th class="ps-4">ID</th>
-                                <th>Name</th>
-                                <th>Role</th>
-                                <th class="text-end pe-4">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for teacher in teachers %}
-                            <tr>
-                                <td class="ps-4"><span class="badge bg-primary bg-opacity-10 text-primary">{{
-                                        teacher['sid'] }}</span></td>
-                                <td class="fw-bold text-light">{{ teacher['name'] }}</td>
-                                <td class="text-muted">Teacher</td>
-                                <td class="text-end pe-4">
-                                    <form action="{{ url_for('delete_user', sid=teacher['sid']) }}" method="post"
-                                        onsubmit="return confirm('Are you sure you want to delete this teacher?');">
-                                        <button class="btn btn-sm btn-outline-danger"><i
-                                                class="fas fa-trash-alt"></i></button>
-                                    </form>
-                                </td>
-                            </tr>
-                            {% else %}
-                            <tr>
-                                <td colspan="4" class="text-center py-4 text-muted">No teachers found.</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+<div style="display: flex; flex-direction: column; gap: 28px;">
+    <!-- Teachers Section -->
+    <div class="ax-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(37, 99, 235, 0.1); display: flex; align-items: center; justify-content: center; color: #2563eb;">
+                    <i data-lucide="graduation-cap" style="width: 20px; height: 20px;"></i>
+                </div>
+                <div>
+                    <h2 class="card-title" style="margin: 0; font-size: 16px;">Faculty & Teachers</h2>
+                    <p style="margin: 0; font-size: 12px; color: #64748b;">Active instructors authorized to launch attendance sessions</p>
                 </div>
             </div>
+            <span class="badge-status status-present">{{ teachers|length }} Registered</span>
+        </div>
+
+        <div style="overflow-x: auto;">
+            <table class="ax-table">
+                <thead>
+                    <tr>
+                        <th>Teacher ID</th>
+                        <th>Instructor</th>
+                        <th>Role</th>
+                        <th style="text-align: right;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for teacher in teachers %}
+                    <tr>
+                        <td>
+                            <span style="font-family: monospace; font-size: 12px; font-weight: 700; background: #f1f5fa; padding: 4px 10px; border-radius: 6px; color: #102a67;">
+                                {{ teacher['sid'] }}
+                            </span>
+                        </td>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #7c3aed, #2563eb); color: #fff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center;">
+                                    {{ teacher['name'][:2].upper() }}
+                                </div>
+                                <span style="font-weight: 700; color: #102a67;">{{ teacher['name'] }}</span>
+                            </div>
+                        </td>
+                        <td><span style="font-size: 13px; color: #64748b; font-weight: 600;">Faculty Instructor</span></td>
+                        <td style="text-align: right;">
+                            <form action="{{ url_for('delete_user', sid=teacher['sid']) }}" method="post" style="display: inline;"
+                                  onsubmit="return confirm('Are you sure you want to remove this teacher account?');">
+                                <button type="submit" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: #ef4444; border-radius: 8px; padding: 6px 12px; font-size: 12px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                                    <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                                    Remove
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" style="text-align: center; padding: 32px; color: #8c9ba5;">
+                            <i data-lucide="user-x" style="width: 32px; height: 32px; margin-bottom: 8px; opacity: 0.5;"></i>
+                            <p style="margin: 0; font-size: 13px;">No teachers found in the system.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
 
-    <!-- Students List -->
-    <div class="col-12">
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-transparent border-0">
-                <h5 class="fw-bold text-success"><i class="fas fa-user-graduate me-2"></i>Students</h5>
-            </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="bg-dark text-light">
-                            <tr>
-                                <th class="ps-4">ID</th>
-                                <th>Name</th>
-                                <th>Role</th>
-                                <th>Status</th>
-                                <th class="text-end pe-4">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for student in students %}
-                            <tr>
-                                <td class="ps-4"><span class="badge bg-success bg-opacity-10 text-success">{{
-                                        student['sid'] }}</span></td>
-                                <td class="fw-bold text-light">{{ student['name'] }}</td>
-                                <td class="text-muted">Student</td>
-                                <td>
-                                    {% if student.status == 'approved' %}
-                                    <span class="badge bg-success">Approved</span>
-                                    {% elif student.status == 'rejected' %}
-                                    <span class="badge bg-danger">Rejected</span>
-                                    {% else %}
-                                    <span class="badge bg-warning text-dark">Pending</span>
-                                    {% endif %}
-                                </td>
-                                <td class="text-end pe-4">
-                                    <div class="d-flex justify-content-end gap-2">
-                                        {% if student.status != 'approved' %}
-                                        <a href="{{ url_for('approve_user', sid=student.sid) }}"
-                                            class="btn btn-sm btn-outline-success" title="Approve">
-                                            <i class="fas fa-check"></i>
-                                        </a>
-                                        {% endif %}
-
-                                        {% if student.status != 'rejected' %}
-                                        <a href="{{ url_for('reject_user', sid=student.sid) }}"
-                                            class="btn btn-sm btn-outline-warning" title="Reject">
-                                            <i class="fas fa-times"></i>
-                                        </a>
-                                        {% endif %}
-
-                                        <form action="{{ url_for('delete_user', sid=student.sid) }}" method="post"
-                                            onsubmit="return confirm('Are you sure you want to delete this student?');"
-                                            class="d-inline">
-                                            <button class="btn btn-sm btn-outline-danger" title="Delete"><i
-                                                    class="fas fa-trash-alt"></i></button>
-                                        </form>
-                                    </div>
-                                </td>
-                            </tr>
-                            {% else %}
-                            <tr>
-                                <td colspan="4" class="text-center py-4 text-muted">No students found.</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+    <!-- Students Section -->
+    <div class="ax-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(16, 185, 129, 0.1); display: flex; align-items: center; justify-content: center; color: #10b981;">
+                    <i data-lucide="users" style="width: 20px; height: 20px;"></i>
+                </div>
+                <div>
+                    <h2 class="card-title" style="margin: 0; font-size: 16px;">Enrolled Students</h2>
+                    <p style="margin: 0; font-size: 12px; color: #64748b;">Review registration approvals, student statuses, and manage access</p>
                 </div>
             </div>
+            <span class="badge-status status-present">{{ students|length }} Students</span>
+        </div>
+
+        <div style="overflow-x: auto;">
+            <table class="ax-table">
+                <thead>
+                    <tr>
+                        <th>Student ID</th>
+                        <th>Student Name</th>
+                        <th>Role</th>
+                        <th>Access Status</th>
+                        <th style="text-align: right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for student in students %}
+                    <tr>
+                        <td>
+                            <span style="font-family: monospace; font-size: 12px; font-weight: 700; background: #f1f5fa; padding: 4px 10px; border-radius: 6px; color: #102a67;">
+                                {{ student['sid'] }}
+                            </span>
+                        </td>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div style="width: 32px; height: 32px; border-radius: 50%; background: #e2eaf5; color: #102a67; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center;">
+                                    {{ student['name'][:2].upper() }}
+                                </div>
+                                <span style="font-weight: 700; color: #102a67;">{{ student['name'] }}</span>
+                            </div>
+                        </td>
+                        <td><span style="font-size: 13px; color: #64748b;">Student</span></td>
+                        <td>
+                            {% if student.status == 'approved' %}
+                            <span class="badge-status status-present"><i data-lucide="check" style="width: 12px; height: 12px; margin-right: 4px;"></i>Approved</span>
+                            {% elif student.status == 'rejected' %}
+                            <span class="badge-status status-absent"><i data-lucide="x" style="width: 12px; height: 12px; margin-right: 4px;"></i>Rejected</span>
+                            {% else %}
+                            <span class="badge-status status-pending"><i data-lucide="clock" style="width: 12px; height: 12px; margin-right: 4px;"></i>Pending Review</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: right;">
+                            <div style="display: inline-flex; gap: 8px; align-items: center;">
+                                {% if student.status != 'approved' %}
+                                <a href="{{ url_for('approve_user', sid=student.sid) }}" title="Approve Student"
+                                   style="background: rgba(16, 185, 129, 0.12); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 8px; padding: 6px 10px; font-size: 12px; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+                                    <i data-lucide="check" style="width: 13px; height: 13px;"></i>
+                                    Approve
+                                </a>
+                                {% endif %}
+
+                                {% if student.status != 'rejected' %}
+                                <a href="{{ url_for('reject_user', sid=student.sid) }}" title="Reject Student"
+                                   style="background: rgba(245, 158, 11, 0.12); color: #d97706; border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 8px; padding: 6px 10px; font-size: 12px; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+                                    <i data-lucide="x" style="width: 13px; height: 13px;"></i>
+                                    Reject
+                                </a>
+                                {% endif %}
+
+                                <form action="{{ url_for('delete_user', sid=student.sid) }}" method="post" style="display: inline;"
+                                      onsubmit="return confirm('Are you sure you want to permanently delete this student?');">
+                                    <button type="submit" title="Delete Student"
+                                            style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 8px; padding: 6px 8px; cursor: pointer; display: inline-flex; align-items: center;">
+                                        <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" style="text-align: center; padding: 32px; color: #8c9ba5;">
+                            <i data-lucide="users" style="width: 32px; height: 32px; margin-bottom: 8px; opacity: 0.5;"></i>
+                            <p style="margin: 0; font-size: 13px;">No enrolled students found.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
 </div>

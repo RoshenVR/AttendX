@@ -1,76 +1,96 @@
 {% extends "base.html" %}
 
+{% block title %}Register - AttendX{% endblock %}
+
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6 col-lg-5">
-        <a href="{{ url_for('login') }}" class="btn btn-link mb-3 ps-0 text-decoration-none">&larr; Back to Login</a>
+<div style="display: flex; align-items: center; justify-content: center; min-height: 80vh; padding: 24px 0;">
+    <div class="ax-card" style="width: 100%; max-width: 480px; padding: 36px 32px; box-shadow: var(--shadow-lg);">
+        <a href="{{ url_for('login') }}" style="display: inline-flex; align-items: center; gap: 6px; color: #64748b; font-size: 13px; font-weight: 600; text-decoration: none; margin-bottom: 20px;">
+            <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
+            Back to Sign In
+        </a>
 
-        <div class="card shadow-sm">
-            <div class="card-body p-4">
-                <h2 class="text-center mb-4">Student Registration</h2>
-
-                <form method="post">
-                    <div class="mb-3">
-                        <label for="name" class="form-label">Full Name</label>
-                        <input type="text" name="name" id="name" class="form-control" required
-                            placeholder="e.g. John Doe">
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="sid" class="form-label">Student ID (Username)</label>
-                        <input type="text" name="sid" id="sid" class="form-control" required placeholder="e.g. S12345">
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="password" class="form-label">Password</label>
-                        <input type="password" name="password" id="password" class="form-control" required>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="department" class="form-label">Department</label>
-                        <select name="department" id="department" class="form-select" required>
-                            <option value="">Select Department</option>
-                            <option value="Computer Science">Computer Science</option>
-                            <option value="Information Technology">Information Technology</option>
-                            <option value="Electronics">Electronics</option>
-                            <option value="Mechanical">Mechanical</option>
-                            <option value="Civil">Civil</option>
-                        </select>
-                    </div>
-
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label for="semester" class="form-label">Semester</label>
-                            <select name="semester" id="semester" class="form-select" required>
-                                <option value="">Select Semester</option>
-                                <option value="1">1st Semester</option>
-                                <option value="2">2nd Semester</option>
-                                <option value="3">3rd Semester</option>
-                                <option value="4">4th Semester</option>
-                                <option value="5">5th Semester</option>
-                                <option value="6">6th Semester</option>
-                                <option value="7">7th Semester</option>
-                                <option value="8">8th Semester</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="section" class="form-label">Section</label>
-                            <select name="section" id="section" class="form-select" required>
-                                <option value="">Select Section</option>
-                                <option value="A">Section A</option>
-                                <option value="B">Section B</option>
-                                <option value="C">Section C</option>
-                                <option value="D">Section D</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="d-grid gap-2 mt-4">
-                        <button type="submit" class="btn btn-success btn-lg">Register</button>
-                    </div>
-                </form>
+        <div style="text-align: center; margin-bottom: 26px;">
+            <div class="brand-icon" style="margin: 0 auto 12px auto; width: 44px; height: 44px; font-size: 24px;">
+                <i data-lucide="user-plus" style="width: 22px; height: 22px;"></i>
             </div>
+            <h1 class="brand-title" style="font-size: 24px;">Create Student Account</h1>
+            <p style="color: #64748b; font-size: 13.5px; margin-top: 4px;">Join AttendX to track your academic attendance</p>
         </div>
+
+        <form method="post">
+            <div style="margin-bottom: 16px;">
+                <label for="name" style="display: block; font-size: 12.5px; font-weight: 700; color: #475569; margin-bottom: 6px;">Full Name</label>
+                <div style="position: relative;">
+                    <i data-lucide="user" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: #8c9ba5;"></i>
+                    <input type="text" name="name" id="name" class="ax-input" style="padding-left: 40px;" placeholder="e.g. Alex Johnson" required>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 16px;">
+                <label for="sid" style="display: block; font-size: 12.5px; font-weight: 700; color: #475569; margin-bottom: 6px;">Student ID (Username)</label>
+                <div style="position: relative;">
+                    <i data-lucide="badge-check" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: #8c9ba5;"></i>
+                    <input type="text" name="sid" id="sid" class="ax-input" style="padding-left: 40px;" placeholder="e.g. S10294" required>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 16px;">
+                <label for="password" style="display: block; font-size: 12.5px; font-weight: 700; color: #475569; margin-bottom: 6px;">Password</label>
+                <div style="position: relative;">
+                    <i data-lucide="lock" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: #8c9ba5;"></i>
+                    <input type="password" name="password" id="password" class="ax-input" style="padding-left: 40px;" placeholder="Create secure password" required>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 16px;">
+                <label for="department" style="display: block; font-size: 12.5px; font-weight: 700; color: #475569; margin-bottom: 6px;">Department</label>
+                <select name="department" id="department" class="ax-select" style="width: 100%;" required>
+                    <option value="">Select Department</option>
+                    <option value="Computer Science">Computer Science</option>
+                    <option value="Information Technology">Information Technology</option>
+                    <option value="Electronics">Electronics</option>
+                    <option value="Mechanical">Mechanical</option>
+                    <option value="Civil">Civil</option>
+                </select>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 24px;">
+                <div>
+                    <label for="semester" style="display: block; font-size: 12.5px; font-weight: 700; color: #475569; margin-bottom: 6px;">Semester</label>
+                    <select name="semester" id="semester" class="ax-select" style="width: 100%;" required>
+                        <option value="">Semester</option>
+                        <option value="1">1st Sem</option>
+                        <option value="2">2nd Sem</option>
+                        <option value="3">3rd Sem</option>
+                        <option value="4">4th Sem</option>
+                        <option value="5">5th Sem</option>
+                        <option value="6">6th Sem</option>
+                        <option value="7">7th Sem</option>
+                        <option value="8">8th Sem</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="section" style="display: block; font-size: 12.5px; font-weight: 700; color: #475569; margin-bottom: 6px;">Section</label>
+                    <select name="section" id="section" class="ax-select" style="width: 100%;" required>
+                        <option value="">Section</option>
+                        <option value="A">Section A</option>
+                        <option value="B">Section B</option>
+                        <option value="C">Section C</option>
+                        <option value="D">Section D</option>
+                    </select>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-scan-qr" style="width: 100%; border-radius: 12px; padding: 13px;">
+                <span>Register Account</span>
+                <i data-lucide="user-check" style="width: 18px; height: 18px;"></i>
+            </button>
+        </form>
+
+        <p style="text-align: center; margin-top: 22px; margin-bottom: 0; font-size: 13px; color: #64748b;">
+            Already registered? <a href="{{ url_for('login') }}" style="color: #2563eb; font-weight: 700; text-decoration: none;">Sign in here</a>
+        </p>
     </div>
 </div>
 {% endblock %}
